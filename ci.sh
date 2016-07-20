@@ -25,10 +25,10 @@ echo 'ulimit -c: '`ulimit -c`
 echo '/proc/sys/kernel/core_pattern: '`cat /proc/sys/kernel/core_pattern`
 sysctl kernel.core_pattern
 
-# # run render tests
-# istanbul cover --dir .nyc_output --include-pid --report none --print none test/render.test.js &&
-# istanbul cover --dir .nyc_output --include-pid --report none --print none test/query.test.js
-# EXIT_CODE=$?
+# run render tests
+istanbul cover --dir .nyc_output --include-pid --report none --print none test/render.test.js &&
+istanbul cover --dir .nyc_output --include-pid --report none --print none test/query.test.js
+EXIT_CODE=$?
 
 # collect core dumps from render tests
 if [[ ${EXIT_CODE} != 0 ]]; then
@@ -40,9 +40,9 @@ for DUMP in $(find ./ -maxdepth 1 -name 'core*' -print); do
 done
 
 nyc report --reporter=lcov
-echo "Sending coverage info coveralls"
+echo "Sending coverage info to coveralls"
 node ./node_modules/coveralls/bin/coveralls.js < ./coverage/lcov.info
-echo "Sending coverage to coveralls"
+echo "Sent coverage info to coveralls"
 
 # return original error code
 if [[ ${EXIT_CODE} != 0 ]]; then
