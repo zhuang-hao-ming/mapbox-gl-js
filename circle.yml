@@ -10,7 +10,7 @@ dependencies:
   cache_directories:
     - './nvm'
   override:
-    - pip --user install awscli
+    - pip install awscli --user
     # disable spotlight to ensure we waste no CPU on needless file indexing
     - if [[ $(uname -s) == 'Darwin' ]]; then sudo mdutil -i off /; fi;
     - |
