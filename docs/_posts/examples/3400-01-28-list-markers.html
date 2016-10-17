@@ -1,0 +1,163 @@
+---
+layout: example
+category: example
+title: List markers
+description: List markers.
+permalink: /list-points/
+tags:
+  - styles
+---
+<style>
+    #symbol-list {
+        position:absolute;
+        top:0; left:0; width:250px;
+        bottom:0;
+        overflow-x:auto;
+        background:#fff;
+        margin:0;
+        padding:5px;
+    }
+    #symbol-list li {
+        padding:15px 5px;
+        margin:0;
+        list-style-type:none;
+        font-family: 'Open Sans', sans-serif;
+        border-bottom: 1px #eee solid;
+        cursor: pointer;
+    }
+
+    h4 {
+        margin: 0;
+    }
+
+    p {
+        margin: 0;
+    }
+    #symbol-list li:hover {
+        background:#eee;
+    }
+</style>
+
+<div id='map'></div>
+<div id='symbol-list'></div>
+<script>
+var map = new mapboxgl.Map({
+    container: 'map', // container id
+    style: 'mapbox://styles/mapbox/light-v9', //stylesheet location
+    center: [-122.49,37.75], // starting position
+    zoom: 11 // starting zoom
+});
+
+var parks = {
+  'features': [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Balboa Park",
+        "address": "San Jose Ave"
+      },
+      "geometry": {
+        "coordinates": [
+          -122.444809,
+          37.724965
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "address": "3223 Ortega St",
+        "name": "West Sunset Playground"
+      },
+      "geometry": {
+        "coordinates": [
+          -122.498698,
+          37.749545
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "address": "1485 Geneva Ave",
+        "name": "Crocker Amazon Playground"
+      },
+      "geometry": {
+        "coordinates": [
+          -122.43172,
+          37.712728
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "address": "Bernal Heights Blvd",
+        "name": "Bernal Heights Park"
+      },
+      "geometry": {
+        "coordinates": [
+          -122.41347,
+          37.743447
+        ],
+        "type": "Point"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "address": "Dolores St",
+        "name": "Mission Dolores Park"
+      },
+      "geometry": {
+        "coordinates": [
+          -122.427115,
+          37.759767
+        ],
+        "type": "Point"
+      }
+    }
+  ],
+  "type": "FeatureCollection"
+}
+
+map.on('load', function(){
+    map.addSource('park-locations', {
+        'data': parks,
+        'type': 'geojson'
+    });
+    map.addLayer({
+        'id': 'neighborhood-parks',
+        'source': 'park-locations',
+        'type': 'symbol',
+        'layout': {
+            'icon-image': 'park-15',
+            'text-field': '{name}',
+            'text-size': 10,
+            'text-anchor': 'top'
+        }
+    });
+
+    var parkList = document.getElementById('symbol-list');
+
+    for(i=0; i < parks.features.length; i++) {
+        var park = parkList.appendChild(document.createElement('li'));
+        park.innerHTML = '<h4>' + parks.features[i].properties.name +'</h4><p>' + parks.features[i].properties.address + '</p>';
+        park.dataPosition = i;
+        park.addEventListener('click', function(){
+            var currentPark = parks.features[this.dataPosition];
+            map.easeTo({
+                center: [
+                    currentPark.geometry.coordinates[0] - 0.01, 
+                    currentPark.geometry.coordinates[1]
+                ],
+                zoom: 13,
+            });
+        });
+    }
+});
+
+</script>
