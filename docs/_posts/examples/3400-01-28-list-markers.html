@@ -1,16 +1,18 @@
 ---
 layout: example
 category: example
-title: List markers
-description: List markers.
-permalink: /list-points/
+title: List symbols
+description: Create an interactive list of all symbols
+permalink: /example/list-symbols/
 tags:
   - styles
 ---
 <style>
     #symbol-list {
         position:absolute;
-        top:0; left:0; width:250px;
+        top:0; 
+        left:0; 
+        width:200px;
         bottom:0;
         overflow-x:auto;
         background:#fff;
@@ -25,17 +27,8 @@ tags:
         border-bottom: 1px #eee solid;
         cursor: pointer;
     }
-
-    h4 {
-        margin: 0;
-    }
-
-    p {
-        margin: 0;
-    }
-    #symbol-list li:hover {
-        background:#eee;
-    }
+    p { margin: 0; }
+    #symbol-list li:hover { background:#eee; }
 </style>
 
 <div id='map'></div>
@@ -44,120 +37,55 @@ tags:
 var map = new mapboxgl.Map({
     container: 'map', // container id
     style: 'mapbox://styles/mapbox/light-v9', //stylesheet location
-    center: [-122.49,37.75], // starting position
-    zoom: 11 // starting zoom
+    center: [-122.475,37.74], // starting position
+    zoom: 11.5 // starting zoom
 });
 
-var parks = {
-  'features': [
-    {
-      "type": "Feature",
-      "properties": {
-        "name": "Balboa Park",
-        "address": "San Jose Ave"
-      },
-      "geometry": {
-        "coordinates": [
-          -122.444809,
-          37.724965
-        ],
-        "type": "Point"
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "address": "3223 Ortega St",
-        "name": "West Sunset Playground"
-      },
-      "geometry": {
-        "coordinates": [
-          -122.498698,
-          37.749545
-        ],
-        "type": "Point"
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "address": "1485 Geneva Ave",
-        "name": "Crocker Amazon Playground"
-      },
-      "geometry": {
-        "coordinates": [
-          -122.43172,
-          37.712728
-        ],
-        "type": "Point"
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "address": "Bernal Heights Blvd",
-        "name": "Bernal Heights Park"
-      },
-      "geometry": {
-        "coordinates": [
-          -122.41347,
-          37.743447
-        ],
-        "type": "Point"
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "address": "Dolores St",
-        "name": "Mission Dolores Park"
-      },
-      "geometry": {
-        "coordinates": [
-          -122.427115,
-          37.759767
-        ],
-        "type": "Point"
-      }
-    }
-  ],
-  "type": "FeatureCollection"
-}
-
 map.on('load', function(){
+    var parkList = document.getElementById('symbol-list');
+    var parks = [];
+
     map.addSource('park-locations', {
-        'data': parks,
-        'type': 'geojson'
+      'url': 'mapbox://examples.ciufxiykc00gz33p2uwpi2swk-3ejta',
+      'type': 'vector'
     });
     map.addLayer({
         'id': 'neighborhood-parks',
         'source': 'park-locations',
         'type': 'symbol',
+        'source-layer': 'neighborhood-parks',
         'layout': {
             'icon-image': 'park-15',
             'text-field': '{name}',
             'text-size': 10,
-            'text-anchor': 'top'
+            'text-anchor': 'bottom',
+            'text-offset': [0, -0.75]
         }
     });
 
-    var parkList = document.getElementById('symbol-list');
-
-    for(i=0; i < parks.features.length; i++) {
-        var park = parkList.appendChild(document.createElement('li'));
-        park.innerHTML = '<h4>' + parks.features[i].properties.name +'</h4><p>' + parks.features[i].properties.address + '</p>';
-        park.dataPosition = i;
-        park.addEventListener('click', function(){
-            var currentPark = parks.features[this.dataPosition];
-            map.easeTo({
-                center: [
-                    currentPark.geometry.coordinates[0] - 0.01, 
-                    currentPark.geometry.coordinates[1]
-                ],
-                zoom: 13,
+    map.on('data', function (e) { 
+        if (e.dataType === 'tile') {
+            parks = map.querySourceFeatures('park-locations', {
+                sourceLayer: 'neighborhood-parks'
             });
-        });
-    }
+
+            for (i=0; i < parks.length; i++) {
+                var park = parkList.appendChild(document.createElement('li'));
+                park.innerHTML = '<p>' + parks[i].properties.name +'</p>';
+                // park.dataPosition = i;
+                // park.addEventListener('click', function(){
+                //     var currentPark = parks[this.dataPosition];
+                //     map.easeTo({
+                //         center: [
+                //         currentPark.geometry.coordinates[0] - 0.01, 
+                //         currentPark.geometry.coordinates[1]
+                //         ],
+                //         zoom: 13,
+                //     });
+                // }); 
+            }
+        }
+    });
 });
 
 </script>
