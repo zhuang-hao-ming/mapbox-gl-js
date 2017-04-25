@@ -67,6 +67,15 @@ class SpriteAtlas extends Evented {
             return this.fire('error', {error: new Error('Image provided in an invalid format. Supported formats are HTMLImageElement, ImageData, and ArrayBufferView.')});
         }
 
+        //Use DatView to pre-multiple image without endianness issues
+        const pixelData = new DataView(pixels.buffer);
+        for (let i = 0; i < pixelData.byteLength; i += 4) {
+            const alpha = pixelData.getUint8(i + 3) / 255;
+            pixelData.setUint8(i + 0,  pixelData.getUint8(i + 0) * alpha);
+            pixelData.setUint8(i + 1,  pixelData.getUint8(i + 1) * alpha);
+            pixelData.setUint8(i + 2,  pixelData.getUint8(i + 2) * alpha);
+        }
+
         if (this.images[name]) {
             return this.fire('error', {error: new Error('An image with this name already exists.')});
         }
