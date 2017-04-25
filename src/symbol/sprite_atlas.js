@@ -52,15 +52,18 @@ class SpriteAtlas extends Evented {
             width = pixels.width;
             height = pixels.height;
             pixels = browser.getImageData(pixels);
+            pixels = new Uint32Array(pixels.buffer);
             pixelRatio = this.pixelRatio;
         } else {
             width = options.width;
             height = options.height;
             pixelRatio = options.pixelRatio || this.pixelRatio;
-        }
-
-        if (ArrayBuffer.isView(pixels)) {
-            pixels = new Uint32Array(pixels.buffer);
+            //Use a copy of the array buffer so we can pre-multiply without affecting user data
+            if (ArrayBuffer.isView(pixels)) {
+                pixels = new Uint32Array(pixels.buffer.slice(0));
+            } else {
+                pixels = new Uint32Array(pixels.data.slice(0).buffer);
+            }
         }
 
         if (!(pixels instanceof Uint32Array)) {
