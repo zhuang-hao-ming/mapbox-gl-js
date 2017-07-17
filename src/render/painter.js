@@ -424,9 +424,22 @@ class Painter {
         }
 
         if (this.options.showTileBoundaries) {
-            const sourceCache = this.style.sourceCaches[Object.keys(this.style.sourceCaches)[0]];
-            if (sourceCache) {
-                draw.debug(this, sourceCache, sourceCache.getVisibleCoordinates());
+            //Use source with highest maxzoom
+            let selectedSource;
+            let sourceCache;
+            const layers = util.values(this.style._layers);
+            layers.forEach((layer) => {
+                if (layer.source && !layer.isHidden(this.transform.zoom)) {
+                    if (layer.source !== (sourceCache && sourceCache.id)) {
+                        sourceCache = this.style.sourceCaches[layer.source];
+                    }
+                    if (!selectedSource || (selectedSource.getSource().maxzoom < sourceCache.getSource().maxzoom)) {
+                        selectedSource = sourceCache;
+                    }
+                }
+            });
+            if (selectedSource) {
+                draw.debug(this, selectedSource, selectedSource.getVisibleCoordinates());
             }
         }
     }

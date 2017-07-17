@@ -33,7 +33,7 @@ function drawDebugTile(painter, sourceCache, coord) {
     painter.debugVAO.bind(gl, program, painter.debugBuffer);
     gl.drawArrays(gl.LINE_STRIP, 0, painter.debugBuffer.length);
 
-    const vertices = createTextVerticies(coord.toString(), 50, 200, 5);
+    const vertices = createTextVerticies(coord.toString(sourceCache.getSource().maxzoom), 50, 200, 5);
     const debugTextArray = new PosArray();
     for (let v = 0; v < vertices.length; v += 2) {
         debugTextArray.emplaceBack(vertices[v], vertices[v + 1]);

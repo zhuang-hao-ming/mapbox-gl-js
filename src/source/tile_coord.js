@@ -39,8 +39,12 @@ class TileCoord {
         (this: any).posMatrix = null;
     }
 
-    toString() {
-        return `${this.z}/${this.x}/${this.y}`;
+    toString(sourceMaxZoom: number | void) {
+        if (sourceMaxZoom && sourceMaxZoom < this.z) {
+            return `${sourceMaxZoom}/${this.x}/${this.y} => ${this.z}`;
+        } else {
+            return `${this.z}/${this.x}/${this.y}`;
+        }
     }
 
     toCoordinate(sourceMaxZoom: number | void) {
