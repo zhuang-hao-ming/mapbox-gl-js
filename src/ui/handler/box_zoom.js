@@ -20,7 +20,7 @@ class BoxZoomHandler {
     _enabled: boolean;
     _active: boolean;
     _startPos: any;
-    _box: HTMLElement;
+    _box: ?HTMLElement;
 
     constructor(map: Map) {
         this._map = map;
@@ -100,8 +100,9 @@ class BoxZoomHandler {
         const p0 = this._startPos,
             p1 = DOM.mousePos(this._el, e);
 
-        if (!this._box) {
-            this._box = DOM.create('div', 'mapboxgl-boxzoom', this._container);
+        let box = this._box;
+        if (!box) {
+            box = this._box = DOM.create('div', 'mapboxgl-boxzoom', this._container);
             this._container.classList.add('mapboxgl-crosshair');
             this._fireEvent('boxzoomstart', e);
         }
@@ -111,10 +112,10 @@ class BoxZoomHandler {
             minY = Math.min(p0.y, p1.y),
             maxY = Math.max(p0.y, p1.y);
 
-        DOM.setTransform(this._box, `translate(${minX}px,${minY}px)`);
+        DOM.setTransform(box, `translate(${minX}px,${minY}px)`);
 
-        this._box.style.width = `${maxX - minX}px`;
-        this._box.style.height = `${maxY - minY}px`;
+        box.style.width = `${maxX - minX}px`;
+        box.style.height = `${maxY - minY}px`;
     }
 
     _onMouseUp(e: MouseEvent) {
@@ -155,7 +156,7 @@ class BoxZoomHandler {
 
         if (this._box) {
             DOM.remove(this._box);
-            this._box = (null : any);
+            this._box = null;
         }
 
         DOM.enableDrag();

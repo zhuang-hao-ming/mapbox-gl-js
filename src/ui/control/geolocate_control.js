@@ -83,7 +83,7 @@ class GeolocateControl extends Evented {
     _container: HTMLElement;
     _dotElement: HTMLElement;
     _geolocateButton: HTMLElement;
-    _geolocationWatchID: number;
+    _geolocationWatchID: ?number;
     _timeoutId: ?number;
     _watchState: string;
     _lastKnownPosition: any;
@@ -113,7 +113,7 @@ class GeolocateControl extends Evented {
 
     onRemove() {
         // clear the geolocation watch if exists
-        if (this._geolocationWatchID !== undefined) {
+        if (typeof this._geolocationWatchID === 'number') {
             window.navigator.geolocation.clearWatch(this._geolocationWatchID);
             this._geolocationWatchID = (undefined : any);
         }
@@ -375,9 +375,11 @@ class GeolocateControl extends Evented {
     }
 
     _clearWatch() {
-        window.navigator.geolocation.clearWatch(this._geolocationWatchID);
+        if (typeof this._geolocationWatchID === 'number') {
+            window.navigator.geolocation.clearWatch(this._geolocationWatchID);
+        }
 
-        this._geolocationWatchID = (undefined : any);
+        this._geolocationWatchID = undefined;
         this._geolocateButton.classList.remove('mapboxgl-ctrl-geolocate-waiting');
         this._geolocateButton.setAttribute('aria-pressed', 'false');
 

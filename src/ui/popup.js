@@ -67,7 +67,7 @@ class Popup extends Evented {
     _closeButton: HTMLElement;
     _tip: HTMLElement;
     _lngLat: LngLat;
-    _pos: Point;
+    _pos: ?Point;
 
     constructor(options: any) {
         super();
@@ -243,7 +243,7 @@ class Popup extends Evented {
     }
 
     _update() {
-        if (!this._map || !this._lngLat || !this._content) { return; }
+        if (!this._map || !this._lngLat || !this._content || !this._pos) { return; }
 
         if (!this._container) {
             this._container = DOM.create('div', 'mapboxgl-popup', this._map.getContainer());
@@ -255,7 +255,7 @@ class Popup extends Evented {
             this._lngLat = smartWrap(this._lngLat, this._pos, this._map.transform);
         }
 
-        this._pos = this._map.project(this._lngLat);
+        const pos = this._pos = this._map.project(this._lngLat);
 
         let anchor = this.options.anchor;
         const offset = normalizeOffset(this.options.offset);
@@ -264,17 +264,17 @@ class Popup extends Evented {
             const width = this._container.offsetWidth,
                 height = this._container.offsetHeight;
 
-            if (this._pos.y + offset.bottom.y < height) {
+            if (pos.y + offset.bottom.y < height) {
                 anchor = ['top'];
-            } else if (this._pos.y > this._map.transform.height - height) {
+            } else if (pos.y > this._map.transform.height - height) {
                 anchor = ['bottom'];
             } else {
                 anchor = [];
             }
 
-            if (this._pos.x < width / 2) {
+            if (pos.x < width / 2) {
                 anchor.push('left');
-            } else if (this._pos.x > this._map.transform.width - width / 2) {
+            } else if (pos.x > this._map.transform.width - width / 2) {
                 anchor.push('right');
             }
 
@@ -285,7 +285,7 @@ class Popup extends Evented {
             }
         }
 
-        const offsetedPos = this._pos.add(offset[anchor]).round();
+        const offsetedPos = pos.add(offset[anchor]).round();
 
         const anchorTranslate = {
             'top': 'translate(-50%,0)',
