@@ -157,7 +157,7 @@ class Popup extends Evented {
      */
     setLngLat(lnglat: LngLatLike) {
         this._lngLat = LngLat.convert(lnglat);
-        this._pos = (null : any);
+        this._pos = null;
         this._update();
         return this;
     }
@@ -243,7 +243,7 @@ class Popup extends Evented {
     }
 
     _update() {
-        if (!this._map || !this._lngLat || !this._content || !this._pos) { return; }
+        if (!this._map || !this._lngLat || !this._content) { return; }
 
         if (!this._container) {
             this._container = DOM.create('div', 'mapboxgl-popup', this._map.getContainer());
@@ -251,7 +251,7 @@ class Popup extends Evented {
             this._container.appendChild(this._content);
         }
 
-        if (this._map.transform.renderWorldCopies) {
+        if (this._map.transform.renderWorldCopies && this._pos) {
             this._lngLat = smartWrap(this._lngLat, this._pos, this._map.transform);
         }
 
