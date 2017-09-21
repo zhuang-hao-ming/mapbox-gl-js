@@ -9,7 +9,7 @@ const formatSample = d3.format(".3r");
 
 class Plot extends React.Component {
     render() {
-        return <svg width="100%" ref={node => this.node = node}></svg>;
+        return <svg width="100%" ref={node => { this.node = node; }}></svg>;
     }
 
     componentDidMount() {
@@ -23,12 +23,12 @@ class Plot extends React.Component {
 
 class DensityPlot extends Plot {
     plot() {
-        function kernelDensityEstimator(kernel, X) {
-            return function(V) {
+        function kernelDensityEstimator(kernel, ticks) {
+            return function(samples) {
                 // https://en.wikipedia.org/wiki/Kernel_density_estimation#A_rule-of-thumb_bandwidth_estimator
-                const bandwidth = 1.06 * d3.deviation(V) * Math.pow(V.length, -0.2);
-                return X.map(function(x) {
-                    return [x, d3.mean(V, function(v) { return kernel((x - v) / bandwidth); }) / bandwidth];
+                const bandwidth = 1.06 * d3.deviation(samples) * Math.pow(samples.length, -0.2);
+                return ticks.map((x) => {
+                    return [x, d3.mean(samples, (v) => kernel((x - v) / bandwidth)) / bandwidth];
                 });
             };
         }
@@ -203,14 +203,14 @@ class RegressionPlot extends Plot {
 class BenchmarkStatistic extends React.Component {
     render() {
         switch (this.props.status) {
-            case 'waiting':
-                return <p className="quiet"></p>;
-            case 'running':
-                return <p>Running...</p>;
-            case 'error':
-                return <p>{this.props.error.message}</p>;
-            default:
-                return <p>{this.props.statistic(this.props)}</p>;
+        case 'waiting':
+            return <p className="quiet"></p>;
+        case 'running':
+            return <p>Running...</p>;
+        case 'error':
+            return <p>{this.props.error.message}</p>;
+        default:
+            return <p>{this.props.statistic(this.props)}</p>;
         }
     }
 }
@@ -225,17 +225,17 @@ class BenchmarkRow extends React.Component {
                     <table className="fixed">
                         <tr><th></th>{this.props.versions.map(version => <th style={{color: versionColor(version.name)}} key={version.name}>{version.name}</th>)}</tr>
                         {this.renderStatistic('R² Slope / Correlation',
-                            (version) => `${formatSample(version.regression.slope)} ms / ${version.regression.correlation.toFixed(3)} ${
+                            (version) => `${formatSample(version.regression.slope)} ms / ${version.regression.correlation.toFixed(3)} ${
                                 version.regression.correlation < 0.9 ? '\u2620\uFE0F' :
                                 version.regression.correlation < 0.99 ? '\u26A0\uFE0F' : ''}`)}
                         {this.renderStatistic('Mean',
-                            (version) => `${formatSample(d3.mean(version.samples))} ms`)}
+                            (version) => `${formatSample(d3.mean(version.samples))} ms`)}
                         {this.renderStatistic('Minimum',
-                            (version) => `${formatSample(d3.min(version.samples))} ms`)}
+                            (version) => `${formatSample(d3.min(version.samples))} ms`)}
                         {this.renderStatistic('Variance',
-                            (version) => `${formatSample(d3.variance(version.samples))} ms`)}
+                            (version) => `${formatSample(d3.variance(version.samples))} ms`)}
                         {this.renderStatistic('Deviation',
-                            (version) => `${formatSample(d3.deviation(version.samples))} ms`)}
+                            (version) => `${formatSample(d3.deviation(version.samples))} ms`)}
                     </table>
                     {ended && <DensityPlot versions={this.props.versions}/>}
                     {ended && <RegressionPlot versions={this.props.versions}/>}
@@ -318,7 +318,7 @@ for (const name in window.mapboxglBenchmarks) {
 promise = promise.then(() => {
     finished = true;
     update();
-})
+});
 
 function update() {
     ReactDOM.render(
