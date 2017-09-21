@@ -5,7 +5,7 @@ const createMap = require('../lib/create_map');
 
 module.exports = class GeoJSONSetDataLarge extends Benchmark {
     setup() {
-        return fetch('http://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_land.geojson')
+        return fetch('/bench/data/naturalearth-land.json')
             .then(response => response.json())
             .then(json => this.data = json)
             .then(() => createMap({
