@@ -34,7 +34,8 @@ class Benchmark {
         const samples = [];
 
         const next = () => {
-            if (elapsed >= 5000) {
+            // 210 samples => 20 observations for regression
+            if (elapsed >= 300 && samples.length > 210) {
                 return Promise.resolve(this.teardown()).then(() => samples);
             }
 
