@@ -167,7 +167,6 @@ class RegressionPlot extends Plot {
 
         svg = enter.merge(svg);
 
-        console.log('.version data', versions.length)
         let group = svg.selectAll(".version")
             .data(versions);
 
@@ -176,7 +175,6 @@ class RegressionPlot extends Plot {
             .style("fill", version => versionColor(version.name))
             .style("fill-opacity", 0.7)
             .merge(group);
-        console.log('.version merged selection', group.data())
 
         let regressionPoints = group.selectAll("circle")
             .data(version => version.regression.data);
@@ -210,13 +208,13 @@ class BenchmarkStatistic extends React.Component {
     render() {
         switch (this.props.status) {
         case 'waiting':
-            return <p className="quiet"></p>;
+            return <span className="quiet"></span>;
         case 'running':
-            return <p>Running...</p>;
+            return <span>Running...</span>;
         case 'error':
-            return <p>{this.props.error.message}</p>;
+            return <span>{this.props.error.message}</span>;
         default:
-            return <p>{this.props.statistic(this.props)}</p>;
+            return <span>{this.props.statistic(this.props)}</span>;
         }
     }
 }
@@ -243,10 +241,17 @@ class BenchmarkRow extends React.Component {
                 <div className="col8">
                     <table className="fixed">
                         <tr style={{cursor: 'pointer'}} onClick={() => this.setState({collapsed: !collapsed})}>
-                            <th>{collapsed ? '▶' : '▼'}</th>
+                            <th style={{width: collapsed ? '2em' : 'auto'}}>{collapsed ? '▶' : '▼'}</th>
                             {this.props.versions.map(version =>
-                                <th style={{color: versionColor(version.name)}} key={version.name}>
-                                    {version.name} {collapsed && <BenchmarkStatistic statistic={formatRegressionStats} {...version}/>}
+                                <th key={version.name}>
+                                    <span style={{color: versionColor(version.name)}}>
+                                        {version.name}
+                                    </span>
+                                    {collapsed &&
+                                        <span style={{fontWeight: 'normal', paddingLeft: '0.5em'}}>
+                                            <BenchmarkStatistic statistic={formatRegressionStats} {...version}/>
+                                        </span>
+                                    }
                                 </th>
                             )}
                         </tr>
