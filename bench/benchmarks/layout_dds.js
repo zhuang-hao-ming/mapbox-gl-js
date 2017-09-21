@@ -95,7 +95,7 @@ module.exports = class LayoutDDS extends Layout {
 
         while (style.layers.length < LAYER_COUNT) {
             for (const layer of layers) {
-                style.layers.push(Object.assign({}, layer, {
+                style.layers.push(Object.assign(({}: any), layer, {
                     id: layer.id + style.layers.length
                 }));
             }

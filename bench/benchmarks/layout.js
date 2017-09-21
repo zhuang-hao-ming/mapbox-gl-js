@@ -11,10 +11,7 @@ const assert = require('assert');
 const promisify = require('pify');
 
 const WorkerTile = require('../../src/source/worker_tile');
-const Style = require('../../src/style/style');
 const StyleLayerIndex = require('../../src/style/style_layer_index');
-const Evented = require('../../src/util/evented');
-const config = require('../../src/util/config');
 const deref = require('../../src/style-spec/deref');
 const TileCoord = require('../../src/source/tile_coord');
 const {
@@ -74,7 +71,7 @@ module.exports = class Layout extends Benchmark {
             });
     }
 
-    setup() {
+    setup(): Promise<void> {
         return this.fetchStyle()
             .then((styleJSON) => {
                 this.layerIndex = new StyleLayerIndex(deref(styleJSON.layers));
@@ -86,14 +83,14 @@ module.exports = class Layout extends Benchmark {
                 this.icons = {};
 
                 const preloadGlyphs = (params, callback) => {
-                    style.getGlyphs(0, params, (err, glyphs) => {
+                    style.getGlyphs('', params, (err, glyphs) => {
                         this.glyphs[JSON.stringify(params)] = glyphs;
                         callback(err, glyphs);
                     });
                 };
 
                 const preloadImages = (params, callback) => {
-                    style.getImages(0, params, (err, icons) => {
+                    style.getImages('', params, (err, icons) => {
                         this.icons[JSON.stringify(params)] = icons;
                         callback(err, icons);
                     });
@@ -103,8 +100,8 @@ module.exports = class Layout extends Benchmark {
             });
     }
 
-    bench(getGlyphs = (params, callback) => callback(null, this.glyphs[JSON.stringify(params)]),
-          getImages = (params, callback) => callback(null, this.icons[JSON.stringify(params)])) {
+    bench(getGlyphs: Function = (params, callback) => callback(null, this.glyphs[JSON.stringify(params)]),
+          getImages: Function = (params, callback) => callback(null, this.icons[JSON.stringify(params)])) {
 
         const actor = {
             send(action, params, callback) {

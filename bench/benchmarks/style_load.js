@@ -8,7 +8,7 @@ module.exports = class StyleLoad extends Benchmark {
     setup() {
         return fetch(`https://api.mapbox.com/styles/v1/mapbox/streets-v9?access_token=${accessToken}`)
             .then(response => response.json())
-            .then(json => this.json = json);
+            .then(json => { this.json = json; });
     }
 
     bench() {

@@ -45,7 +45,7 @@ class Benchmark {
                 samples.push(sample);
                 return next();
             });
-        }
+        };
 
         return Promise.resolve(this.setup()).then(next);
     }

@@ -42,7 +42,7 @@ module.exports = class GeoJSONSetDataSmall extends Benchmark {
     }
 
     bench() {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             const sourceCache = this.map.style.sourceCaches.geojson;
 
             sourceCache.on('data', function onData() {

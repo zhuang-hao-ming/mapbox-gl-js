@@ -7,7 +7,7 @@ module.exports = class GeoJSONSetDataLarge extends Benchmark {
     setup() {
         return fetch('/bench/data/naturalearth-land.json')
             .then(response => response.json())
-            .then(json => this.data = json)
+            .then(json => { this.data = json; })
             .then(() => createMap({
                 width: 1024,
                 height: 768,
@@ -34,7 +34,7 @@ module.exports = class GeoJSONSetDataLarge extends Benchmark {
     }
 
     bench() {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             const sourceCache = this.map.style.sourceCaches.geojson;
 
             sourceCache.on('data', function onData() {
