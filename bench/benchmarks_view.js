@@ -58,7 +58,7 @@ class DensityPlot extends Plot {
             .domain([0, yMax])
             .range([height, 0]);
 
-        const svg = d3.select(this.node)
+        let svg = d3.select(this.node)
             .attr("height", height + margin.top + margin.bottom)
             .selectAll("g")
             .data([0]);
@@ -82,6 +82,7 @@ class DensityPlot extends Plot {
             .append("g")
             .call(d3.axisLeft(y).ticks(4, "%"));
 
+        svg = enter.merge(svg);
         const version = svg.selectAll(".density")
             .data(versions);
 
@@ -130,7 +131,7 @@ class RegressionPlot extends Plot {
             .x(d => x(d[0]))
             .y(d => y(d[1]));
 
-        const svg = d3.select(this.node)
+        let svg = d3.select(this.node)
             .attr("height", height + margin.top + margin.bottom)
             .selectAll("g")
             .data([0]);
@@ -162,6 +163,8 @@ class RegressionPlot extends Plot {
             .attr("dy", ".71em")
             .style("text-anchor", "end")
             .text("Time (ms)");
+
+        svg = enter.merge(svg);
 
         let group = svg.selectAll(".version")
             .data(versions);
