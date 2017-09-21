@@ -42,6 +42,11 @@ class Benchmark {
         return Promise.resolve(this.setup()).then(() => this._begin());
     }
 
+    _done() {
+        // 210 samples => 20 observations for regression
+        return this._elapsed >= 300 && this._samples.length > 210;
+    }
+
     _begin(): Promise<Array<number>> {
         this._samples = [];
         this._elapsed = 0;
@@ -61,7 +66,7 @@ class Benchmark {
             const sample = performance.now() - this._start;
             this._samples.push(sample);
             this._elapsed += sample;
-            if (this._elapsed >= 1000) {
+            if (this._done()) {
                 return this._end();
             }
             this._start = performance.now();
@@ -73,7 +78,7 @@ class Benchmark {
         const sample = performance.now() - this._start;
         this._samples.push(sample);
         this._elapsed += sample;
-        if (this._elapsed >= 1000) {
+        if (this._done()) {
             return this._end();
         }
         this._start = performance.now();
