@@ -24,8 +24,6 @@ register(require('./benchmarks/map_load'));
 register(require('./benchmarks/style_load'));
 register(require('./benchmarks/query_point'));
 register(require('./benchmarks/query_box'));
-register(require('./benchmarks/geojson_setdata_large'));
-register(require('./benchmarks/geojson_setdata_small'));
 register(require('./benchmarks/filter_create'));
 register(require('./benchmarks/filter_evaluate'));
 
