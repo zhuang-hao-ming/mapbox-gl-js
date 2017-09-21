@@ -163,6 +163,7 @@ class RegressionPlot extends Plot {
             .style("text-anchor", "end")
             .text("Time (ms)");
 
+        console.log('.version data', versions.length)
         let group = svg.selectAll(".version")
             .data(versions);
 
@@ -171,6 +172,7 @@ class RegressionPlot extends Plot {
             .style("fill", version => versionColor(version.name))
             .style("fill-opacity", 0.7)
             .merge(group);
+        console.log('.version merged selection', group.data())
 
         let regressionPoints = group.selectAll("circle")
             .data(version => version.regression.data);
@@ -216,29 +218,47 @@ class BenchmarkStatistic extends React.Component {
 }
 
 class BenchmarkRow extends React.Component {
+    constructor(props) {
+        const isSubBenchmark = props.name.indexOf('/') >= 0
+        this.state = {
+            collapsed: isSubBenchmark
+        };
+    }
+
     render() {
         const ended = this.props.versions.find(version => version.status === 'ended');
+        const collapsed = this.state.collapsed;
+
+        const formatRegressionStats = (version) => `${formatSample(version.regression.slope)} ms / ${version.regression.correlation.toFixed(3)} ${
+                                        version.regression.correlation < 0.9 ? '\u2620\uFE0F' :
+                                        version.regression.correlation < 0.99 ? '\u26A0\uFE0F' : ''}`
+
         return (
             <div className="col12 clearfix space-bottom">
                 <h2 className="col4"><a href={`#${this.props.name}`} onClick={this.reload}>{this.props.name}</a></h2>
                 <div className="col8">
                     <table className="fixed">
-                        <tr><th></th>{this.props.versions.map(version => <th style={{color: versionColor(version.name)}} key={version.name}>{version.name}</th>)}</tr>
-                        {this.renderStatistic('R² Slope / Correlation',
-                            (version) => `${formatSample(version.regression.slope)} ms / ${version.regression.correlation.toFixed(3)} ${
-                                version.regression.correlation < 0.9 ? '\u2620\uFE0F' :
-                                version.regression.correlation < 0.99 ? '\u26A0\uFE0F' : ''}`)}
-                        {this.renderStatistic('Mean',
+                        <tr style={{cursor: 'pointer'}} onClick={() => this.setState({collapsed: !collapsed})}>
+                            <th>{collapsed ? '▶' : '▼'}</th>
+                            {this.props.versions.map(version =>
+                                <th style={{color: versionColor(version.name)}} key={version.name}>
+                                    {version.name} {collapsed && <BenchmarkStatistic statistic={formatRegressionStats} {...version}/>}
+                                </th>
+                            )}
+                        </tr>
+                        {!collapsed && this.renderStatistic('R² Slope / Correlation',
+                            formatRegressionStats)}
+                        {!collapsed && this.renderStatistic('Mean',
                             (version) => `${formatSample(d3.mean(version.samples))} ms`)}
-                        {this.renderStatistic('Minimum',
+                        {!collapsed && this.renderStatistic('Minimum',
                             (version) => `${formatSample(d3.min(version.samples))} ms`)}
-                        {this.renderStatistic('Variance',
+                        {!collapsed && this.renderStatistic('Variance',
                             (version) => `${formatSample(d3.variance(version.samples))} ms`)}
-                        {this.renderStatistic('Deviation',
+                        {!collapsed && this.renderStatistic('Deviation',
                             (version) => `${formatSample(d3.deviation(version.samples))} ms`)}
                     </table>
-                    {ended && <DensityPlot versions={this.props.versions}/>}
-                    {ended && <RegressionPlot versions={this.props.versions}/>}
+                    {ended && !collapsed && <DensityPlot versions={this.props.versions}/>}
+                    {ended && !collapsed && <RegressionPlot versions={this.props.versions}/>}
                 </div>
             </div>
         );
