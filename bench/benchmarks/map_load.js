@@ -11,10 +11,6 @@ module.exports = class MapLoad extends Benchmark {
                 sources: {},
                 layers: []
             }
-        }).then(map => this.map = map);
-    }
-
-    teardown() {
-        this.map.remove();
+        }).then(map => map.remove());
     }
 };
