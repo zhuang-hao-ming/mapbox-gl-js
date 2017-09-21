@@ -2,7 +2,30 @@
 
 'use strict';
 
+export type BenchmarkOptions = {
+    label: string,
+    options: any
+};
+
 class Benchmark {
+    label: string;
+    options: any;
+
+    /**
+     * The `getArguments` static method may be overridden by subclasses. A
+     * separate instance of the benchmark will be created and run for each of
+     * the returned `BenchmarkOptions` objects.  Options may be accessed by
+     * the benchmark via `this.options`.
+     */
+    static getArguments(): Array<BenchmarkOptions> {
+        return [{ label: '', options: {} }];
+    }
+
+    constructor(opts: BenchmarkOptions) {
+        this.label = opts.label;
+        this.options = opts.options;
+    }
+
     /**
      * The `setup` method is intended to be overridden by subclasses. It will be called once, prior to
      * running any benchmark iterations, and may set state on `this` which the benchmark later accesses.

@@ -279,7 +279,7 @@ let finished = false;
 let promise = Promise.resolve();
 
 for (const name in window.mapboxglBenchmarks) {
-    if (filter && name !== filter)
+    if (filter && !name.startsWith(filter))
         continue;
 
     const benchmark = { name, versions: [] };
@@ -299,7 +299,10 @@ for (const name in window.mapboxglBenchmarks) {
             version.status = 'running';
             update();
 
-            return window.mapboxglBenchmarks[name][ver].run()
+            const [Benchmark, options] = window.mapboxglBenchmarks[name][ver];
+
+            const bench = new Benchmark(options);
+            return bench.run()
                 .then(samples => {
                     version.status = 'ended';
                     version.samples = samples;

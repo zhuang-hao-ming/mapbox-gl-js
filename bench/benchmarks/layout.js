@@ -20,15 +20,20 @@ const {
     normalizeTileURL
 } = require('../../src/util/mapbox');
 
+import type {BenchmarkOptions} from '../lib/benchmark'
+
 // Note: this class is extended in turn by the LayoutDDS benchmark.
 module.exports = class Layout extends Benchmark {
     glyphs: Object;
     icons: Object;
+    getGlyphs: Function;
+    getImages: Function;
     workerTile: WorkerTile;
     layerIndex: StyleLayerIndex;
-    tiles: Array<{coord: TileCoord, buffer: ArrayBuffer}>;
+    options: { coord: TileCoord };
+    tile: ArrayBuffer;
 
-    tileCoords(): Array<TileCoord> {
+    static getArguments(): Array<BenchmarkOptions> {
         return [
             new TileCoord(15, 5242, 12665),
             new TileCoord(14, 2620, 6332),
@@ -46,7 +51,10 @@ module.exports = class Layout extends Benchmark {
             new TileCoord(2, 1, 2),
             new TileCoord(1, 1, 1),
             new TileCoord(0, 0, 0)
-        ];
+        ].map(coord => ({
+            label: String(coord.z),
+            options: { coord }
+        }));
     }
 
     sourceID(): string {
@@ -58,27 +66,27 @@ module.exports = class Layout extends Benchmark {
             .then(response => response.json());
     }
 
-    fetchTiles(styleJSON: StyleSpecification): Promise<Array<{coord: TileCoord, buffer: ArrayBuffer}>> {
+    fetchTile(styleJSON: StyleSpecification): Promise<ArrayBuffer> {
         const sourceURL: string = (styleJSON.sources[this.sourceID()]: any).url;
         return fetch(normalizeSourceURL(sourceURL))
             .then(response => response.json())
             .then((tileJSON: TileJSON) => {
-                return Promise.all(this.tileCoords().map(coord => {
-                    return fetch((normalizeTileURL(coord.url(tileJSON.tiles))))
-                        .then(response => response.arrayBuffer())
-                        .then(buffer => ({coord, buffer}));
-                }));
+                const coord = this.options.coord;
+                return fetch((normalizeTileURL(coord.url(tileJSON.tiles))))
+                    .then(response => response.arrayBuffer())
             });
     }
 
     setup(): Promise<void> {
+        this.getGlyphs = (params, callback) => callback(null, this.glyphs[JSON.stringify(params)]),
+        this.getImages = (params, callback) => callback(null, this.icons[JSON.stringify(params)])
         return this.fetchStyle()
             .then((styleJSON) => {
                 this.layerIndex = new StyleLayerIndex(deref(styleJSON.layers));
-                return Promise.all([createStyle(styleJSON), this.fetchTiles(styleJSON)]);
+                return Promise.all([createStyle(styleJSON), this.fetchTile(styleJSON)]);
             })
-            .then(([style, tiles]) => {
-                this.tiles = tiles;
+            .then(([style, tile]) => {
+                this.tile = tile;
                 this.glyphs = {};
                 this.icons = {};
 
@@ -100,9 +108,7 @@ module.exports = class Layout extends Benchmark {
             });
     }
 
-    bench(getGlyphs: Function = (params, callback) => callback(null, this.glyphs[JSON.stringify(params)]),
-          getImages: Function = (params, callback) => callback(null, this.icons[JSON.stringify(params)])) {
-
+    bench(getGlyphs: Function = this.getGlyphs, getImages: Function = this.getImages) {
         const actor = {
             send(action, params, callback) {
                 setTimeout(() => {
@@ -117,34 +123,30 @@ module.exports = class Layout extends Benchmark {
 
         let promise: Promise<void> = Promise.resolve();
 
-        for (const {coord, buffer} of this.tiles) {
-            promise = promise.then(() => {
-                const workerTile = new WorkerTile({
-                    coord,
-                    zoom: coord.z,
-                    tileSize: 512,
-                    overscaling: 1,
-                    showCollisionBoxes: false,
-                    source: this.sourceID(),
-                    uid: '0',
-                    maxZoom: 22,
-                    pixelRatio: 1,
-                    request: {
-                        url: ''
-                    },
-                    angle: 0,
-                    pitch: 0,
-                    cameraToCenterDistance: 0,
-                    cameraToTileDistance: 0
-                });
+        const coord = this.options.coord;
 
-                const tile = new VT.VectorTile(new Protobuf(buffer));
-                const parse = promisify(workerTile.parse.bind(workerTile));
+        const workerTile = new WorkerTile({
+            coord,
+            zoom: coord.z,
+            tileSize: 512,
+            overscaling: 1,
+            showCollisionBoxes: false,
+            source: this.sourceID(),
+            uid: '0',
+            maxZoom: 22,
+            pixelRatio: 1,
+            request: {
+                url: ''
+            },
+            angle: 0,
+            pitch: 0,
+            cameraToCenterDistance: 0,
+            cameraToTileDistance: 0
+        });
 
-                return parse(tile, this.layerIndex, actor);
-            });
-        }
+        const tile = new VT.VectorTile(new Protobuf(this.tile));
+        const parse = promisify(workerTile.parse.bind(workerTile));
 
-        return promise;
+        return parse(tile, this.layerIndex, actor);
     }
 };

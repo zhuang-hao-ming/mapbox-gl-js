@@ -12,9 +12,14 @@ window.mapboxglVersions.push('master');
 window.mapboxglVersions.push(version);
 
 function register(Benchmark) {
-    window.mapboxglBenchmarks[Benchmark.name] = window.mapboxglBenchmarks[Benchmark.name] || {};
-    window.mapboxglBenchmarks[Benchmark.name].master = new Benchmark();
-    window.mapboxglBenchmarks[Benchmark.name][version] = new Benchmark();
+    const benchmarkArgs = Benchmark.getArguments();
+    for (const arg of benchmarkArgs) {
+        const label = arg.label ? `${Benchmark.name}/${arg.label}` : Benchmark.name;
+        console.log('registering ', label, arg)
+        window.mapboxglBenchmarks[label] = window.mapboxglBenchmarks[label] || {};
+        window.mapboxglBenchmarks[label].master = [Benchmark, arg];
+        window.mapboxglBenchmarks[label][version] = [Benchmark, arg];
+    }
 }
 
 register(require('./benchmarks/layout'));
