@@ -46,7 +46,10 @@ class StatisticsPlot extends Plot {
             kdeWidth = 100;
 
         const t = d3.scaleLinear()
-            .domain([0, d3.max(this.props.versions.map(v => d3.max(v.samples)))])
+            .domain([
+                d3.min(this.props.versions.map(v => d3.min(v.samples))),
+                d3.max(this.props.versions.map(v => d3.max(v.samples)))
+            ])
             .range([height, 0])
             .nice();
 
