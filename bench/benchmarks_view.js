@@ -81,12 +81,12 @@ class StatisticsPlot extends Plot {
 
         enter
             .append("g")
+            .attr("class", "p-axis")
             .attr("transform", `translate(0,${height})`)
-            .call(d3.axisBottom(p).ticks(2, "%"));
 
         enter
             .append("g")
-            .call(d3.axisLeft(t).tickFormat(formatSample))
+            .attr("class", "t-axis")
             .append("text")
             .attr("fill", "#000")
             .attr("transform", "rotate(-90)")
@@ -96,6 +96,12 @@ class StatisticsPlot extends Plot {
             .text("Time (ms)");
 
         svg = enter.merge(svg);
+
+        svg.selectAll(".p-axis")
+            .call(d3.axisBottom(p).ticks(2, "%"));
+
+        svg.selectAll(".t-axis")
+            .call(d3.axisLeft(t).tickFormat(formatSample));
 
         const density = svg.selectAll(".density")
             .data(versions);
@@ -283,9 +289,8 @@ class RegressionPlot extends Plot {
 
         enter
             .append("g")
-            .attr("class", "x axis")
+            .attr("class", "x-axis")
             .attr("transform", `translate(0,${height})`)
-            .call(d3.axisBottom(x))
             .append("text")
             .attr("fill", "#000")
             .attr("x", width)
@@ -295,8 +300,7 @@ class RegressionPlot extends Plot {
 
         enter
             .append("g")
-            .attr("class", "y axis")
-            .call(d3.axisLeft(y).ticks(4).tickFormat(formatSample))
+            .attr("class", "y-axis")
             .append("text")
             .attr("fill", "#000")
             .attr("transform", "rotate(-90)")
@@ -306,6 +310,12 @@ class RegressionPlot extends Plot {
             .text("Time (ms)");
 
         svg = enter.merge(svg);
+
+        svg.selectAll(".x-axis")
+            .call(d3.axisBottom(x));
+
+        svg.selectAll(".y-axis")
+            .call(d3.axisLeft(y).ticks(4).tickFormat(formatSample));
 
         let group = svg.selectAll(".version")
             .data(versions);
