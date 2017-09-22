@@ -1,10 +1,10 @@
 'use strict';
 
 const Benchmark = require('../lib/benchmark');
-const createStyle = require('../lib/create_style');
 const accessToken = require('../lib/access_token');
+const validateStyle = require('../../src/style-spec/validate_style.min');
 
-module.exports = class StyleLoad extends Benchmark {
+module.exports = class StyleValidate extends Benchmark {
     setup() {
         return fetch(`https://api.mapbox.com/styles/v1/mapbox/streets-v9?access_token=${accessToken}`)
             .then(response => response.json())
@@ -12,6 +12,6 @@ module.exports = class StyleLoad extends Benchmark {
     }
 
     bench() {
-        return createStyle(this.json);
+        validateStyle(this.json);
     }
 };

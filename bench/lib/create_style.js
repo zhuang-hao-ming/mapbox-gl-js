@@ -16,7 +16,7 @@ module.exports = function (styleJSON: StyleSpecification): Promise<Style> {
         const style = new Style(styleJSON, (new StubMap(): any), {});
 
         style
-            .on('data', () => resolve(style))
+            .on('style.load', () => resolve(style))
             .on('error', reject);
     });
 };
