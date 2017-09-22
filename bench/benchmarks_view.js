@@ -82,7 +82,7 @@ class StatisticsPlot extends Plot {
         enter
             .append("g")
             .attr("class", "p-axis")
-            .attr("transform", `translate(0,${height})`)
+            .attr("transform", `translate(0,${height})`);
 
         enter
             .append("g")
@@ -124,127 +124,128 @@ class StatisticsPlot extends Plot {
         group = group.enter().append("g")
             .attr("class", "version")
             .attr("transform", v => `translate(${b(v.name)},0)`)
-            .merge(group)
-            .each((v, i, nodes) => {
-                if (v.samples.length === 0)
-                    return;
+            .merge(group);
 
-                const bandwidth = b.bandwidth();
-                const group = d3.select(nodes[i]);
-                const color = versionColor(v.name);
-                const scale = d3.scaleLinear()
-                    .domain([0, v.samples.length])
-                    .range([0, bandwidth]);
+        group.each((v, i, nodes) => {
+            if (v.samples.length === 0)
+                return;
 
-                const sorted = v.samples.slice().sort(d3.ascending);
-                const [q1, q2, q3] = [.25, .5, .75].map((d) => d3.quantile(sorted, d));
-                const mean = d3.mean(sorted);
+            const bandwidth = b.bandwidth();
+            const group = d3.select(nodes[i]);
+            const color = versionColor(v.name);
+            const scale = d3.scaleLinear()
+                .domain([0, v.samples.length])
+                .range([0, bandwidth]);
 
-                let min = [NaN, Infinity];
-                let max = [NaN, -Infinity];
-                for (let i = 0; i < v.samples.length; i++) {
-                    const s = v.samples[i];
-                    if (s < min[1]) min = [i, s];
-                    if (s > max[1]) max = [i, s];
-                }
+            const sorted = v.samples.slice().sort(d3.ascending);
+            const [q1, q2, q3] = [.25, .5, .75].map((d) => d3.quantile(sorted, d));
+            const mean = d3.mean(sorted);
 
-                let samples = group.selectAll("circle")
-                    .data(v.samples);
+            let min = [NaN, Infinity];
+            let max = [NaN, -Infinity];
+            for (let i = 0; i < v.samples.length; i++) {
+                const s = v.samples[i];
+                if (s < min[1]) min = [i, s];
+                if (s > max[1]) max = [i, s];
+            }
 
-                samples.enter().append("circle")
-                    .attr("r", (d, i) => i === min[0] || i === max[0] ? 2 : 1)
-                    .attr("fill", color)
-                    .merge(samples);
+            let samples = group.selectAll("circle")
+                .data(v.samples);
 
-                samples
-                    .attr("cx", (d, i) => scale(i))
-                    .attr("cy", d => t(d));
+            samples = samples.enter().append("circle")
+                .attr("r", (d, i) => i === min[0] || i === max[0] ? 2 : 1)
+                .attr("fill", color)
+                .merge(samples);
 
-                const quartiles = group.selectAll("line.quartiles")
-                    .data([0]);
+            samples
+                .attr("cx", (d, i) => scale(i))
+                .attr("cy", d => t(d));
 
-                quartiles.enter().append("line")
-                    .attr("class", "quartiles")
-                    .attr("x1", bandwidth / 2)
-                    .attr("x2", bandwidth / 2)
-                    .attr("stroke", color)
-                    .attr("stroke-width", bandwidth)
-                    .attr("stroke-opacity", 0.5)
-                    .merge(quartiles)
-                    .attr("y1", t(q1))
-                    .attr("y2", t(q3));
+            const quartiles = group.selectAll("line.quartiles")
+                .data([0]);
 
-                const medianLine = group.selectAll("line.median")
-                    .data([0]);
+            quartiles.enter().append("line")
+                .attr("class", "quartiles")
+                .attr("x1", bandwidth / 2)
+                .attr("x2", bandwidth / 2)
+                .attr("stroke", color)
+                .attr("stroke-width", bandwidth)
+                .attr("stroke-opacity", 0.5)
+                .merge(quartiles)
+                .attr("y1", t(q1))
+                .attr("y2", t(q3));
 
-                medianLine.enter().append("line")
-                    .attr("class", "median")
-                    .attr("x1", bandwidth / 2)
-                    .attr("x2", bandwidth / 2)
-                    .attr("stroke", color)
-                    .attr("stroke-width", bandwidth)
-                    .attr("stroke-opacity", 1)
-                    .merge(medianLine)
-                    .attr("y1", t(q2) - 0.5)
-                    .attr("y2", t(q2) + 0.5);
+            const medianLine = group.selectAll("line.median")
+                .data([0]);
 
-                const meanLine = group.selectAll("line.mean")
-                    .data([0]);
+            medianLine.enter().append("line")
+                .attr("class", "median")
+                .attr("x1", bandwidth / 2)
+                .attr("x2", bandwidth / 2)
+                .attr("stroke", color)
+                .attr("stroke-width", bandwidth)
+                .attr("stroke-opacity", 1)
+                .merge(medianLine)
+                .attr("y1", t(q2) - 0.5)
+                .attr("y2", t(q2) + 0.5);
 
-                meanLine.enter().append("line")
-                    .attr("class", "mean")
-                    .attr("x1", bandwidth / 2)
-                    .attr("x2", bandwidth / 2)
-                    .attr("stroke", "white")
-                    .attr("stroke-width", bandwidth)
-                    .attr("stroke-opacity", 1)
-                    .merge(meanLine)
-                    .attr("y1", t(mean) - 0.5)
-                    .attr("y2", t(mean) + 0.5);
+            const meanLine = group.selectAll("line.mean")
+                .data([0]);
 
-                const rightLabels = group.selectAll("text.right")
-                    .data([q1, q2, q3], Number);
+            meanLine.enter().append("line")
+                .attr("class", "mean")
+                .attr("x1", bandwidth / 2)
+                .attr("x2", bandwidth / 2)
+                .attr("stroke", "white")
+                .attr("stroke-width", bandwidth)
+                .attr("stroke-opacity", 1)
+                .merge(meanLine)
+                .attr("y1", t(mean) - 0.5)
+                .attr("y2", t(mean) + 0.5);
 
-                rightLabels.enter().append("text")
-                    .attr("class", "right")
-                    .attr("dy", ".3em")
-                    .attr("dx", 6)
-                    .attr("x", bandwidth)
-                    .attr("font-size", 10)
-                    .attr("font-family", "sans-serif")
-                    .text(formatSample)
-                    .merge(rightLabels)
-                    .attr("y", t);
+            const rightLabels = group.selectAll("text.right")
+                .data([q1, q2, q3], Number);
 
-                const leftLabels = group.selectAll("text.left")
-                    .data([mean], Number);
+            rightLabels.enter().append("text")
+                .attr("class", "right")
+                .attr("dy", ".3em")
+                .attr("dx", 6)
+                .attr("x", bandwidth)
+                .attr("font-size", 10)
+                .attr("font-family", "sans-serif")
+                .text(formatSample)
+                .merge(rightLabels)
+                .attr("y", t);
 
-                leftLabels.enter().append("text")
-                    .attr("class", "left")
-                    .attr("dy", ".3em")
-                    .attr("dx", -6)
-                    .attr("x", 0)
-                    .attr("text-anchor", "end")
-                    .attr("font-size", 10)
-                    .attr("font-family", "sans-serif")
-                    .text(formatSample)
-                    .merge(leftLabels)
-                    .attr("y", t);
+            const leftLabels = group.selectAll("text.left")
+                .data([mean], Number);
 
-                const extentLabels = group.selectAll("text.extent")
-                    .data([min, max]);
+            leftLabels.enter().append("text")
+                .attr("class", "left")
+                .attr("dy", ".3em")
+                .attr("dx", -6)
+                .attr("x", 0)
+                .attr("text-anchor", "end")
+                .attr("font-size", 10)
+                .attr("font-family", "sans-serif")
+                .text(formatSample)
+                .merge(leftLabels)
+                .attr("y", t);
 
-                extentLabels.enter().append("text")
-                    .attr("class", "extent")
-                    .attr("dy", (d, i) => i === 0 ? "1.3em" : "-0.7em")
-                    .attr("x", d => scale(d[0]))
-                    .attr("text-anchor", "middle")
-                    .attr("font-size", 10)
-                    .attr("font-family", "sans-serif")
-                    .text(d => formatSample(d[1]))
-                    .merge(extentLabels)
-                    .attr("y", d => t(d[1]));
-            });
+            const extentLabels = group.selectAll("text.extent")
+                .data([min, max]);
+
+            extentLabels.enter().append("text")
+                .attr("class", "extent")
+                .attr("dy", (d, i) => i === 0 ? "1.3em" : "-0.7em")
+                .attr("x", d => scale(d[0]))
+                .attr("text-anchor", "middle")
+                .attr("font-size", 10)
+                .attr("font-family", "sans-serif")
+                .text(d => formatSample(d[1]))
+                .merge(extentLabels)
+                .attr("y", d => t(d[1]));
+        });
     }
 }
 

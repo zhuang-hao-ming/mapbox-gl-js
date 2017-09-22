@@ -51,11 +51,11 @@ class Benchmark {
         if (bench instanceof Promise) {
             return bench.then(this._async);
         } else {
-            return this._sync();
+            return (this._sync(): any);
         }
     }
 
-    _sync(): Promise<Array<number>> {
+    _sync() {
         // Avoid Promise overhead for sync benchmarks.
         while (true) {
             const sample = performance.now() - this._start;
@@ -67,9 +67,6 @@ class Benchmark {
             this._start = performance.now();
             this.bench();
         }
-
-        // Unreachable, but placate flow.
-        return this._end();
     }
 
     _async(): Promise<Array<number>> {
