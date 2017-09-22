@@ -204,6 +204,25 @@ class RegressionPlot extends Plot {
     }
 }
 
+class RawData extends React.Component {
+    render() {
+        if (this.props.versions.some(v => v.status !== 'ended')) {
+            return <span/>
+        }
+
+        const rows = [['version', 'iteration', 'time']];
+        for (const version of this.props.versions) {
+            version.samples.forEach((sample, i) => {
+                rows.push([version.name, i, sample]);
+            })
+        }
+
+        const dataURI = `data:,${rows.map(r => r.join('%2C')).join('%0A')}`;
+
+        return <a href={dataURI} download={`${this.props.name}.csv`}>Download Raw Data</a>
+    }
+}
+
 class BenchmarkStatistic extends React.Component {
     render() {
         switch (this.props.status) {
@@ -237,7 +256,10 @@ class BenchmarkRow extends React.Component {
 
         return (
             <div className="col12 clearfix space-bottom">
-                <h2 className="col4"><a href={`#${this.props.name}`} onClick={this.reload}>{this.props.name}</a></h2>
+                <div className="col4">
+                    <h2><a href={`#${this.props.name}`} onClick={this.reload}>{this.props.name}</a></h2>
+                    <RawData {...this.props} />
+                </div>
                 <div className="col8">
                     <table className="fixed">
                         <tr style={{cursor: 'pointer'}} onClick={() => this.setState({collapsed: !collapsed})}>
