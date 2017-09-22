@@ -35,21 +35,9 @@ module.exports = class Layout extends Benchmark {
 
     static getArguments(): Array<BenchmarkOptions> {
         return [
-            new TileCoord(15, 5242, 12665),
-            new TileCoord(14, 2620, 6332),
-            new TileCoord(13, 1309, 3167),
             new TileCoord(12, 655, 1583),
-            new TileCoord(11, 327, 790),
-            new TileCoord(10, 163, 395),
-            new TileCoord(9, 81, 197),
             new TileCoord(8, 40, 98),
-            new TileCoord(7, 19, 50),
-            new TileCoord(6, 9, 23),
-            new TileCoord(5, 4, 11),
             new TileCoord(4, 3, 6),
-            new TileCoord(3, 0, 3),
-            new TileCoord(2, 1, 2),
-            new TileCoord(1, 1, 1),
             new TileCoord(0, 0, 0)
         ].map(coord => ({
             label: String(coord.z),

@@ -5,22 +5,17 @@
 const Layout = require('./layout');
 const TileCoord = require('../../src/source/tile_coord');
 
+import type {BenchmarkOptions} from '../lib/benchmark'
+
 const TILE_COUNT = 25;
 const LAYER_COUNT = 2;
 
 module.exports = class LayoutDDS extends Layout {
-    tileCoords(): Array<TileCoord> {
-        const coordinates = [];
-        const xRange = [9370, 9375];
-        const yRange = [12532, 12537];
-        while (coordinates.length < TILE_COUNT) {
-            for (let x = xRange[0]; x < xRange[1]; x++) {
-                for (let y = yRange[0]; y < yRange[1]; y++) {
-                    coordinates.push(new TileCoord(15, x, y));
-                }
-            }
-        }
-        return coordinates;
+    static getArguments(): Array<BenchmarkOptions> {
+        return [{
+            label: '',
+            options: { coord: new TileCoord(15, 9373, 12535) }
+        }];
     }
 
     sourceID(): string {
