@@ -6,23 +6,15 @@ const versionColor = d3.scaleOrdinal(d3.schemeCategory10);
 versionColor(0); // Skip blue -- too similar to link color.
 
 const formatSample = d3.format(".3r");
+const Axis = require('./lib/axis');
 
-class Plot extends React.Component {
+class StatisticsPlot extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {width: 100};
+    }
+
     render() {
-        return <svg width="100%" style={{overflow: 'visible'}} ref={node => { this.node = node; }}></svg>;
-    }
-
-    componentDidMount() {
-        this.plot();
-    }
-
-    componentDidUpdate() {
-        this.plot();
-    }
-}
-
-class StatisticsPlot extends Plot {
-    plot() {
         function kernelDensityEstimator(kernel, ticks) {
             return function(samples) {
                 if (samples.length === 0) {
@@ -40,10 +32,10 @@ class StatisticsPlot extends Plot {
             return Math.abs(v) <= 1 ? 0.75 * (1 - v * v) : 0;
         }
 
-        const margin = {top: 0, right: 20, bottom: 20, left: 0},
-            width = this.node.clientWidth - margin.left - margin.right,
-            height = 400 - margin.top - margin.bottom,
-            kdeWidth = 100;
+        const margin = {top: 0, right: 20, bottom: 20, left: 0};
+        const width = this.state.width - margin.left - margin.right;
+        const height = 400 - margin.top - margin.bottom;
+        const kdeWidth = 100;
 
         const t = d3.scaleLinear()
             .domain([
@@ -70,182 +62,128 @@ class StatisticsPlot extends Plot {
             .domain([0, d3.max(versions.map(v => d3.max(v.density, d => d[1])))])
             .range([0, kdeWidth]);
 
-        let svg = d3.select(this.node)
-            .attr("height", height + margin.top + margin.bottom)
-            .selectAll("g")
-            .data([0]);
+        const line = d3.line()
+            .curve(d3.curveBasis)
+            .y(d => t(d[0]))
+            .x(d => p(d[1]));
 
-        const enter = svg.enter()
-            .append("g")
-            .attr("transform", `translate(${margin.left},${margin.top})`);
+        return (
+            <svg
+                width="100%"
+                height={height + margin.top + margin.bottom}
+                style={{overflow: 'visible'}}
+                ref={(ref) => { this.ref = ref; }}>
+                <g transform={`translate(${margin.left},${margin.top})`}>
+                    <Axis orientation="bottom" scale={p} ticks={[2, "%"]} transform={`translate(0,${height})`}>
+                    </Axis>
+                    <Axis orientation="left" scale={t} tickFormat={formatSample}>
+                        <text fill='#000' textAnchor="end"  y={6} transform="rotate(-90)" dy=".71em">Time (ms)</text>
+                    </Axis>
+                    {versions.map((v, i) => {
+                        if (v.samples.length === 0)
+                            return null;
 
-        enter
-            .append("g")
-            .attr("class", "p-axis")
-            .attr("transform", `translate(0,${height})`);
+                        const bandwidth = b.bandwidth();
+                        const color = versionColor(v.name);
+                        const scale = d3.scaleLinear()
+                            .domain([0, v.samples.length])
+                            .range([0, bandwidth]);
 
-        enter
-            .append("g")
-            .attr("class", "t-axis")
-            .append("text")
-            .attr("fill", "#000")
-            .attr("transform", "rotate(-90)")
-            .attr("y", 6)
-            .attr("dy", ".71em")
-            .style("text-anchor", "end")
-            .text("Time (ms)");
+                        const sorted = v.samples.slice().sort(d3.ascending);
+                        const [q1, q2, q3] = [.25, .5, .75].map((d) => d3.quantile(sorted, d));
+                        const mean = d3.mean(sorted);
 
-        svg = enter.merge(svg);
+                        let min = [NaN, Infinity];
+                        let max = [NaN, -Infinity];
+                        for (let i = 0; i < v.samples.length; i++) {
+                            const s = v.samples[i];
+                            if (s < min[1]) min = [i, s];
+                            if (s > max[1]) max = [i, s];
+                        }
 
-        svg.selectAll(".p-axis")
-            .call(d3.axisBottom(p).ticks(2, "%"));
+                        return <g key={i}>
+                            <path
+                                fill="none"
+                                stroke={color}
+                                strokeWidth={2}
+                                strokeOpacity={0.7}
+                                d={line(v.density)} />
+                            <g transform={`translate(${b(v.name)},0)`}>
+                                {v.samples.map((d, i) =>
+                                    <circle
+                                        key={i}
+                                        fill={color}
+                                        cx={scale(i)}
+                                        cy={t(d)}
+                                        r={i === min[0] || i === max[0] ? 2 : 1} />
+                                )}
+                                <line // quartiles
+                                    x1={bandwidth / 2}
+                                    x2={bandwidth / 2}
+                                    y1={t(q1)}
+                                    y2={t(q3)}
+                                    stroke={color}
+                                    strokeWidth={bandwidth}
+                                    strokeOpacity={0.5} />
+                                <line // median
+                                    x1={bandwidth / 2}
+                                    x2={bandwidth / 2}
+                                    y1={t(q2) - 0.5}
+                                    y2={t(q2) + 0.5}
+                                    stroke={color}
+                                    strokeWidth={bandwidth}
+                                    strokeOpacity={1} />
+                                <line // mean
+                                    x1={bandwidth / 2}
+                                    x2={bandwidth / 2}
+                                    y1={t(mean) - 0.5}
+                                    y2={t(mean) + 0.5}
+                                    stroke='white'
+                                    strokeWidth={bandwidth}
+                                    strokeOpacity={1} />
+                                {[mean].map((d, i) =>
+                                    <text // left
+                                        key={i}
+                                        dx={-6}
+                                        dy='.3em'
+                                        x={0}
+                                        y={t(d)}
+                                        textAnchor='end'
+                                        fontSize={10}
+                                        fontFamily='sans-serif'>{formatSample(d)}</text>
+                                )}
+                                {[min, max].map((d, i) =>
+                                    <text // extent
+                                        key={i}
+                                        dx={0}
+                                        dy={i === 0 ? '1.3em' : '-0.7em'}
+                                        x={scale(d[0])}
+                                        y={t(d[1])}
+                                        textAnchor='middle'
+                                        fontSize={10}
+                                        fontFamily='sans-serif'>{formatSample(d[1])}</text>
+                                )}
+                                {[q1, q2, q3].map((d, i) =>
+                                    <text // right
+                                        key={i}
+                                        dx={6}
+                                        dy='.3em'
+                                        x={bandwidth}
+                                        y={t(d)}
+                                        textAnchor='start'
+                                        fontSize={10}
+                                        fontFamily='sans-serif'>{formatSample(d)}</text>
+                                )}
+                            </g>
+                        </g>;
+                    })}
+                </g>
+            </svg>
+        );
+    }
 
-        svg.selectAll(".t-axis")
-            .call(d3.axisLeft(t).tickFormat(formatSample));
-
-        const density = svg.selectAll(".density")
-            .data(versions);
-
-        density.enter().append("path")
-            .attr("class", "density")
-            .attr("fill", "none")
-            .attr("stroke", v => versionColor(v.name))
-            .attr("stroke-opacity", 0.7)
-            .attr("stroke-width", 2)
-            .merge(density)
-            .attr("d", v => d3.line()
-                .curve(d3.curveBasis)
-                .y(d => t(d[0]))
-                .x(d => p(d[1]))(v.density));
-
-        let group = svg.selectAll('.version')
-            .data(versions);
-
-        group = group.enter().append("g")
-            .attr("class", "version")
-            .attr("transform", v => `translate(${b(v.name)},0)`)
-            .merge(group);
-
-        group.each((v, i, nodes) => {
-            if (v.samples.length === 0)
-                return;
-
-            const bandwidth = b.bandwidth();
-            const group = d3.select(nodes[i]);
-            const color = versionColor(v.name);
-            const scale = d3.scaleLinear()
-                .domain([0, v.samples.length])
-                .range([0, bandwidth]);
-
-            const sorted = v.samples.slice().sort(d3.ascending);
-            const [q1, q2, q3] = [.25, .5, .75].map((d) => d3.quantile(sorted, d));
-            const mean = d3.mean(sorted);
-
-            let min = [NaN, Infinity];
-            let max = [NaN, -Infinity];
-            for (let i = 0; i < v.samples.length; i++) {
-                const s = v.samples[i];
-                if (s < min[1]) min = [i, s];
-                if (s > max[1]) max = [i, s];
-            }
-
-            let samples = group.selectAll("circle")
-                .data(v.samples);
-
-            samples = samples.enter().append("circle")
-                .attr("r", (d, i) => i === min[0] || i === max[0] ? 2 : 1)
-                .attr("fill", color)
-                .merge(samples);
-
-            samples
-                .attr("cx", (d, i) => scale(i))
-                .attr("cy", d => t(d));
-
-            const quartiles = group.selectAll("line.quartiles")
-                .data([0]);
-
-            quartiles.enter().append("line")
-                .attr("class", "quartiles")
-                .attr("x1", bandwidth / 2)
-                .attr("x2", bandwidth / 2)
-                .attr("stroke", color)
-                .attr("stroke-width", bandwidth)
-                .attr("stroke-opacity", 0.5)
-                .merge(quartiles)
-                .attr("y1", t(q1))
-                .attr("y2", t(q3));
-
-            const medianLine = group.selectAll("line.median")
-                .data([0]);
-
-            medianLine.enter().append("line")
-                .attr("class", "median")
-                .attr("x1", bandwidth / 2)
-                .attr("x2", bandwidth / 2)
-                .attr("stroke", color)
-                .attr("stroke-width", bandwidth)
-                .attr("stroke-opacity", 1)
-                .merge(medianLine)
-                .attr("y1", t(q2) - 0.5)
-                .attr("y2", t(q2) + 0.5);
-
-            const meanLine = group.selectAll("line.mean")
-                .data([0]);
-
-            meanLine.enter().append("line")
-                .attr("class", "mean")
-                .attr("x1", bandwidth / 2)
-                .attr("x2", bandwidth / 2)
-                .attr("stroke", "white")
-                .attr("stroke-width", bandwidth)
-                .attr("stroke-opacity", 1)
-                .merge(meanLine)
-                .attr("y1", t(mean) - 0.5)
-                .attr("y2", t(mean) + 0.5);
-
-            const rightLabels = group.selectAll("text.right")
-                .data([q1, q2, q3], Number);
-
-            rightLabels.enter().append("text")
-                .attr("class", "right")
-                .attr("dy", ".3em")
-                .attr("dx", 6)
-                .attr("x", bandwidth)
-                .attr("font-size", 10)
-                .attr("font-family", "sans-serif")
-                .text(formatSample)
-                .merge(rightLabels)
-                .attr("y", t);
-
-            const leftLabels = group.selectAll("text.left")
-                .data([mean], Number);
-
-            leftLabels.enter().append("text")
-                .attr("class", "left")
-                .attr("dy", ".3em")
-                .attr("dx", -6)
-                .attr("x", 0)
-                .attr("text-anchor", "end")
-                .attr("font-size", 10)
-                .attr("font-family", "sans-serif")
-                .text(formatSample)
-                .merge(leftLabels)
-                .attr("y", t);
-
-            const extentLabels = group.selectAll("text.extent")
-                .data([min, max]);
-
-            extentLabels.enter().append("text")
-                .attr("class", "extent")
-                .attr("dy", (d, i) => i === 0 ? "1.3em" : "-0.7em")
-                .attr("x", d => scale(d[0]))
-                .attr("text-anchor", "middle")
-                .attr("font-size", 10)
-                .attr("font-family", "sans-serif")
-                .text(d => formatSample(d[1]))
-                .merge(extentLabels)
-                .attr("y", d => t(d[1]));
-        });
+    componentDidMount() {
+        this.setState({ width: this.ref.clientWidth });
     }
 }
 
@@ -257,12 +195,16 @@ function regression(samples) {
     return result;
 }
 
-class RegressionPlot extends Plot {
-    plot() {
-        const margin = {top: 10, right: 20, bottom: 30, left: 0},
-            width = this.node.clientWidth - margin.left - margin.right,
-            height = 200 - margin.top - margin.bottom;
+class RegressionPlot extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {width: 100};
+    }
 
+    render() {
+        const margin = {top: 10, right: 20, bottom: 30, left: 0};
+        const width = this.state.width - margin.left - margin.right;
+        const height = 200 - margin.top - margin.bottom;
         const versions = this.props.versions.filter(version => version.regression);
 
         const x = d3.scaleLinear()
@@ -279,79 +221,44 @@ class RegressionPlot extends Plot {
             .x(d => x(d[0]))
             .y(d => y(d[1]));
 
-        let svg = d3.select(this.node)
-            .attr("height", height + margin.top + margin.bottom)
-            .selectAll("g")
-            .data([0]);
+        return (
+            <svg
+                width="100%"
+                height={height + margin.top + margin.bottom}
+                style={{overflow: 'visible'}}
+                ref={(ref) => { this.ref = ref; }}>
+                <g transform={`translate(${margin.left},${margin.top})`}>
+                    <Axis orientation="bottom" scale={x} transform={`translate(0,${height})`}>
+                        <text fill='#000' textAnchor="end" y={-6} x={width}>Iterations</text>
+                    </Axis>
+                    <Axis orientation="left" scale={y} ticks={4} tickFormat={formatSample}>
+                        <text fill='#000' textAnchor="end"  y={6} transform="rotate(-90)" dy=".71em">Time (ms)</text>
+                    </Axis>
+                    {versions.map((v, i) =>
+                        <g
+                            key={i}
+                            fill={versionColor(v.name)}
+                            fill-opacity="0.7">
+                            {v.regression.data.map(([a, b], i) =>
+                                <circle key={i} r="2" cx={x(a)} cy={y(b)}/>
+                            )}
+                            <path
+                                stroke={versionColor(v.name)}
+                                strokeWidth={1}
+                                strokeOpacity={0.5}
+                                d={line(v.regression.data.map(d => [
+                                    d[0],
+                                    d[0] * v.regression.slope + v.regression.intercept
+                                ]))} />
+                        </g>
+                    )}
+                </g>
+            </svg>
+        );
+    }
 
-        const enter = svg.enter()
-            .append("g")
-            .attr("transform", `translate(${margin.left},${margin.top})`);
-
-        enter
-            .append("g")
-            .attr("class", "x-axis")
-            .attr("transform", `translate(0,${height})`)
-            .append("text")
-            .attr("fill", "#000")
-            .attr("x", width)
-            .attr("y", -6)
-            .style("text-anchor", "end")
-            .text("Iterations");
-
-        enter
-            .append("g")
-            .attr("class", "y-axis")
-            .append("text")
-            .attr("fill", "#000")
-            .attr("transform", "rotate(-90)")
-            .attr("y", 6)
-            .attr("dy", ".71em")
-            .style("text-anchor", "end")
-            .text("Time (ms)");
-
-        svg = enter.merge(svg);
-
-        svg.selectAll(".x-axis")
-            .call(d3.axisBottom(x));
-
-        svg.selectAll(".y-axis")
-            .call(d3.axisLeft(y).ticks(4).tickFormat(formatSample));
-
-        let group = svg.selectAll(".version")
-            .data(versions);
-
-        group = group.enter().append("g")
-            .attr("class", "version")
-            .style("fill", version => versionColor(version.name))
-            .style("fill-opacity", 0.7)
-            .merge(group);
-
-        let regressionPoints = group.selectAll("circle")
-            .data(version => version.regression.data);
-
-        regressionPoints = regressionPoints.enter().append("circle")
-            .attr("r", 2)
-            .merge(regressionPoints);
-
-        regressionPoints
-            .attr("cx", d => x(d[0]))
-            .attr("cy", d => y(d[1]));
-
-        let regressionLine = group.selectAll('.regression-line')
-            .data((version) => [version]);
-
-        regressionLine = regressionLine.enter().append('path')
-            .attr('class', 'regression-line')
-            .attr('stroke', version => versionColor(version.name))
-            .attr('stroke-width', 1)
-            .attr('stroke-opacity', 0.5)
-            .merge(regressionLine);
-
-        regressionLine.attr('d', version => line(version.regression.data.map(d => [
-            d[0],
-            d[0] * version.regression.slope + version.regression.intercept
-        ])));
+    componentDidMount() {
+        this.setState({ width: this.ref.clientWidth });
     }
 }
 
