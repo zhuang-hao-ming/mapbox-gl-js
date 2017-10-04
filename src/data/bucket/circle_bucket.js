@@ -33,6 +33,9 @@ const circleInterface = {
 };
 
 function addCircleVertex(layoutVertexArray, x, y, extrudeX, extrudeY) {
+    // Here we calculate vertices based on the actual geometry center (x, y)
+    // and "extrude" numbers that dictate whether to move the vertex up or
+    // down and left and right.
     layoutVertexArray.emplaceBack(
         (x * 2) + ((extrudeX + 1) / 2),
         (y * 2) + ((extrudeY + 1) / 2));
@@ -116,7 +119,11 @@ class CircleBucket implements Bucket {
         this.segments.destroy();
     }
 
+    // addFeature is run on each individual geometry feature contained in a circle layer.
     addFeature(feature: VectorTileFeature, geometry: Array<Array<Point>>) {
+        // Since theoretically you could create a circle layer from any geometry
+        // type, we have to iterate a few levels down to that containing raw
+        // point geometries:
         for (const ring of geometry) {
             for (const point of ring) {
                 const x = point.x;
@@ -137,11 +144,16 @@ class CircleBucket implements Bucket {
                 const segment = this.segments.prepareSegment(4, this.layoutVertexArray, this.indexArray);
                 const index = segment.vertexLength;
 
+                // addCircleVertex (see above) adds vertices to the vertex
+                // array.
                 addCircleVertex(this.layoutVertexArray, x, y, -1, -1);
                 addCircleVertex(this.layoutVertexArray, x, y, 1, -1);
                 addCircleVertex(this.layoutVertexArray, x, y, 1, 1);
                 addCircleVertex(this.layoutVertexArray, x, y, -1, 1);
 
+                // Here we add the two triangles that make up a circle to the
+                // triangle index array. (Think of a circle as being really
+                // just a square, with transparent/sheared corners.)
                 this.indexArray.emplaceBack(index, index + 1, index + 2);
                 this.indexArray.emplaceBack(index, index + 3, index + 2);
 

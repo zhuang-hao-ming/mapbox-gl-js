@@ -178,6 +178,7 @@ class LineBucket implements Bucket {
         }
     }
 
+    // addLine is run on each individual geometry feature contained in a line layer.
     addLine(vertices: Array<Point>, feature: VectorTileFeature, join: string, cap: string, miterLimit: number, roundLimit: number) {
         const isPolygon = vectorTileFeatureTypes[feature.type] === 'Polygon';
 
@@ -280,6 +281,8 @@ class LineBucket implements Bucket {
                 if (prevSegmentLength > 2 * sharpCornerOffset) {
                     const newPrevVertex = currentVertex.sub(currentVertex.sub(prevVertex)._mult(sharpCornerOffset / prevSegmentLength)._round());
                     this.distance += newPrevVertex.dist(prevVertex);
+                    // addCurrentVertex is where we handle adding vertices to
+                    // the vertex buffer, handling for different join/end types.
                     this.addCurrentVertex(newPrevVertex, this.distance, prevNormal.mult(1), 0, 0, false, segment);
                     prevVertex = newPrevVertex;
                 }

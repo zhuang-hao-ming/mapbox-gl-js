@@ -8,6 +8,7 @@ void main() {
     #pragma mapbox: initialize lowp float height
     #pragma mapbox: initialize highp vec4 color
 
+    // The colors have already been fully calculated as v_color in the vertex shader.
     gl_FragColor = v_color;
 
 #ifdef OVERDRAW_INSPECTOR

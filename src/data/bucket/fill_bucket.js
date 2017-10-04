@@ -114,7 +114,10 @@ class FillBucket implements Bucket {
         this.segments2.destroy();
     }
 
+    // addFeature is run on each individual geometry feature contained in a fill layer
     addFeature(feature: VectorTileFeature, geometry: Array<Array<Point>>) {
+        // classifyRings separates the geometry in multipolygons: for a single/
+        // simple polygon, this only iterates over an array of length 1.
         for (const polygon of classifyRings(geometry, EARCUT_MAX_RINGS)) {
             let numVertices = 0;
             for (const ring of polygon) {
@@ -127,6 +130,7 @@ class FillBucket implements Bucket {
             const flattened = [];
             const holeIndices = [];
 
+            // Here we iterate over the "rings" (exterior of a polygon + any interior holes)
             for (const ring of polygon) {
                 if (ring.length === 0) {
                     continue;
@@ -139,13 +143,22 @@ class FillBucket implements Bucket {
                 const lineSegment = this.segments2.prepareSegment(ring.length, this.layoutVertexArray, this.indexArray2);
                 const lineIndex = lineSegment.vertexLength;
 
+                // Here we add the coordinates of the first vertex of this polygon
+                // to the vertex array.
                 this.layoutVertexArray.emplaceBack(ring[0].x, ring[0].y);
+                // Fill layers can optionally have outlines that don't use triangles
+                // but rather just lines, so here we're adding the edge leading up to
+                // our first vertex to the line index array.
                 this.indexArray2.emplaceBack(lineIndex + ring.length - 1, lineIndex);
+
                 flattened.push(ring[0].x);
                 flattened.push(ring[0].y);
 
                 for (let i = 1; i < ring.length; i++) {
+                    // Now as we iterate over the remaining vertices, we add their
+                    // positions to the vertex array...
                     this.layoutVertexArray.emplaceBack(ring[i].x, ring[i].y);
+                    // ...then add their edges to the line index array.
                     this.indexArray2.emplaceBack(lineIndex + i - 1, lineIndex + i);
                     flattened.push(ring[i].x);
                     flattened.push(ring[i].y);
@@ -155,9 +168,16 @@ class FillBucket implements Bucket {
                 lineSegment.primitiveLength += ring.length;
             }
 
+            // "earcut" is the algorithm used to do polygon tessellation
+            // (https://github.com/mapbox/earcut). It produces an array of
+            // vertex indices that can be used to cover any polygon shape
+            // with individual triangles.
             const indices = earcut(flattened, holeIndices);
             assert(indices.length % 3 === 0);
 
+            // Now that we've calculated the triangle indices, we add them
+            // to the triangle index array (the index array used for actually
+            // filling the polygon):
             for (let i = 0; i < indices.length; i += 3) {
                 this.indexArray.emplaceBack(
                     triangleIndex + indices[i],

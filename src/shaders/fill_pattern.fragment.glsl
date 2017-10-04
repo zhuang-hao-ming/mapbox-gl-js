@@ -15,6 +15,8 @@ varying vec2 v_pos_b;
 void main() {
     #pragma mapbox: initialize lowp float opacity
 
+    // Here we're just calculating the correct pixel within the symbol within
+    // the sprite, then samling it (again, twice for the sake of crossfading).
     vec2 imagecoord = mod(v_pos_a, 1.0);
     vec2 pos = mix(u_pattern_tl_a / u_texsize, u_pattern_br_a / u_texsize, imagecoord);
     vec4 color1 = texture2D(u_image, pos);

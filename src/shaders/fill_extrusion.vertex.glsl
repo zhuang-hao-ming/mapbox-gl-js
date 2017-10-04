@@ -30,6 +30,10 @@ void main() {
     // Relative luminance (how dark/bright is the surface color?)
     float colorvalue = color.r * 0.2126 + color.g * 0.7152 + color.b * 0.0722;
 
+    // We calculate the color using a varying vec4 in the fragment shader because
+    // the colors along walls become gradually lighter as they go upward. They're
+    // initialized as opaque black, then we'll add to them with calculations based
+    // on the lighting and their intended color:
     v_color = vec4(0.0, 0.0, 0.0, 1.0);
 
     // Add slight ambient lighting so no extrusions are totally black

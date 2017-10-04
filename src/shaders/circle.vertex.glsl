@@ -31,6 +31,11 @@ void main(void) {
     // multiply a_pos by 0.5, since we had it * 2 in order to sneak
     // in extrusion data
     vec2 circle_center = floor(a_pos * 0.5);
+
+    // We do some handling here for whether the map should stick flat to the
+    // map when it's pitched or stand "upright" in relation to the viewport,
+    // and whether further features should appear smaller in pitched maps.
+    // Go to the `else` below for the basic case.
     if (u_pitch_with_map) {
         vec2 corner_position = circle_center;
         if (u_scale_with_map) {
@@ -45,11 +50,19 @@ void main(void) {
 
         gl_Position = u_matrix * vec4(corner_position, 0, 1);
     } else {
+        // Basic case:
+        // First we set the position to be the center of the circle, so initially
+        // this will be the same for all 4 vertices (recall circles are made of
+        // two triangles).
         gl_Position = u_matrix * vec4(circle_center, 0, 1);
 
         if (u_scale_with_map) {
             gl_Position.xy += extrude * (radius + stroke_width) * u_extrude_scale * u_camera_to_center_distance;
         } else {
+            // Basic case:
+            // Since we've set the extrude vector differently (+1 or -1) in each
+            // direction, now we can use it to move each vertex outward, accounting
+            // for the intended radius of the circle.
             gl_Position.xy += extrude * (radius + stroke_width) * u_extrude_scale * gl_Position.w;
         }
     }

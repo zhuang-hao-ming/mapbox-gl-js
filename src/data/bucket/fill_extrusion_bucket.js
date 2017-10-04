@@ -122,7 +122,10 @@ class FillExtrusionBucket implements Bucket {
         this.segments.destroy();
     }
 
+    // addFeature is run on each individual geometry feature contained in a fill-extrusion layer
     addFeature(feature: VectorTileFeature, geometry: Array<Array<Point>>) {
+        // As we do in fill_bucket, we need to iterate over potential multipolygons;
+        // for most cases this will only be a single polygon.
         for (const polygon of classifyRings(geometry, EARCUT_MAX_RINGS)) {
             let numVertices = 0;
             for (const ring of polygon) {
@@ -131,6 +134,9 @@ class FillExtrusionBucket implements Bucket {
 
             let segment = this.segments.prepareSegment(4, this.layoutVertexArray, this.indexArray);
 
+            // As we do in fill_bucket, we need to iterate here in case we
+            // have interior holes. In the case of a simple polygon, this
+            // is an array of length 1.
             for (const ring of polygon) {
                 if (ring.length === 0) {
                     continue;
@@ -138,29 +144,49 @@ class FillExtrusionBucket implements Bucket {
 
                 let edgeDistance = 0;
 
+                // Now we iterate over the individual vertices within a ring to
+                // add the "walls."
                 for (let p = 0; p < ring.length; p++) {
                     const p1 = ring[p];
 
                     if (p >= 1) {
                         const p2 = ring[p - 1];
 
+                        // isBoundaryEdge does a coarse check to ensure this
+                        // edge isn't one artificially created where a polygon
+                        // feature crosses a tile boundary; if that's the case,
+                        // we don't need to add that wall as it would be occluded
+                        // by the extruded feature on the adjoining tile.
                         if (!isBoundaryEdge(p1, p2)) {
                             if (segment.vertexLength + 4 > MAX_VERTEX_ARRAY_LENGTH) {
                                 segment = this.segments.prepareSegment(4, this.layoutVertexArray, this.indexArray);
                             }
 
+                            // Here we calculate the normal vector (the unit
+                            // vector pointing perpendicularly from the edge);
+                            // this is saved as an attribute on these vertices
+                            // and is used for lighting.
                             const perp = p1.sub(p2)._perp()._unit();
 
+                            // Here we add the bottom and top vertices of the
+                            // near end of this wall.
                             addVertex(this.layoutVertexArray, p1.x, p1.y, perp.x, perp.y, 0, 0, edgeDistance);
                             addVertex(this.layoutVertexArray, p1.x, p1.y, perp.x, perp.y, 0, 1, edgeDistance);
 
+                            // We track distance along the edge of an extrusion
+                            // in order to tile patterns well along walls, in
+                            // the case of patterned extrusions.
                             edgeDistance += p2.dist(p1);
 
+                            // Now we add the bottom and top vertices of the next
+                            // end of this wall.
                             addVertex(this.layoutVertexArray, p2.x, p2.y, perp.x, perp.y, 0, 0, edgeDistance);
                             addVertex(this.layoutVertexArray, p2.x, p2.y, perp.x, perp.y, 0, 1, edgeDistance);
 
                             const bottomRight = segment.vertexLength;
 
+                            // Add two triangles to the index array that will
+                            // make up the rectangular wall.
                             this.indexArray.emplaceBack(bottomRight, bottomRight + 1, bottomRight + 2);
                             this.indexArray.emplaceBack(bottomRight + 1, bottomRight + 2, bottomRight + 3);
 
@@ -179,6 +205,10 @@ class FillExtrusionBucket implements Bucket {
             const holeIndices = [];
             const triangleIndex = segment.vertexLength;
 
+            // Now we'll iterate over the ring again to add the vertices that
+            // make up the rooftop. (We can't share vertices with the walls
+            // because these will have different normal vectors in order
+            // to light these surfaces differently.)
             for (const ring of polygon) {
                 if (ring.length === 0) {
                     continue;
@@ -191,6 +221,7 @@ class FillExtrusionBucket implements Bucket {
                 for (let i = 0; i < ring.length; i++) {
                     const p = ring[i];
 
+                    // Add this roof vertex.
                     addVertex(this.layoutVertexArray, p.x, p.y, 0, 0, 1, 1, 0);
 
                     flattened.push(p.x);
@@ -198,9 +229,12 @@ class FillExtrusionBucket implements Bucket {
                 }
             }
 
+            // Like in fill_bucket, we use an algorithm called earcut to
+            // calculate the triangles that will make up the roof polygon.
             const indices = earcut(flattened, holeIndices);
             assert(indices.length % 3 === 0);
 
+            // Now add these triangle indices to the index array:
             for (let j = 0; j < indices.length; j += 3) {
                 this.indexArray.emplaceBack(
                     triangleIndex + indices[j],

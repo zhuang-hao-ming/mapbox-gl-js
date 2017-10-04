@@ -51,6 +51,7 @@ function drawFillTiles(painter, sourceCache, layer, coords, drawFn) {
     if (pattern.isPatternMissing(layer.paint['fill-pattern'], painter)) return;
 
     let firstTile = true;
+    // Each `coord` is a tile coordinate, so here we iterate over tiles on the screen
     for (const coord of coords) {
         const tile = sourceCache.getTile(coord);
         const bucket: ?FillBucket = (tile.getBucket(layer): any);
@@ -66,8 +67,10 @@ function drawFillTile(painter, sourceCache, layer, tile, coord, bucket, firstTil
     const gl = painter.gl;
     const programConfiguration = bucket.programConfigurations.get(layer.id);
 
+    // In `setFillProgram` we'll set up uniforms, etc: see below
     const program = setFillProgram('fill', layer.paint['fill-pattern'], painter, programConfiguration, layer, tile, coord, firstTile);
 
+    // Here's the actual draw command
     program.draw(
         gl,
         gl.TRIANGLES,
@@ -79,6 +82,10 @@ function drawFillTile(painter, sourceCache, layer, tile, coord, bucket, firstTil
 }
 
 function drawStrokeTile(painter, sourceCache, layer, tile, coord, bucket, firstTile) {
+    // In addition to patterned and solid fills, the one other type of drawing
+    // we handle here is fill strokes (these also have their own shader, and this
+    // is one of the only places we draw with WebGL's LINES primitive rather
+    // than TRIANGLES).
     const gl = painter.gl;
     const programConfiguration = bucket.programConfigurations.get(layer.id);
     const usePattern = layer.paint['fill-pattern'] && !layer.getPaintProperty('fill-outline-color');
@@ -99,6 +106,8 @@ function drawStrokeTile(painter, sourceCache, layer, tile, coord, bucket, firstT
 function setFillProgram(programId, usePattern, painter, programConfiguration, layer, tile, coord, firstTile) {
     let program;
     const prevProgram = painter.currentProgram;
+    // We use a different shader for patterned or solid fills: detect which one we
+    // need (and whether we've already got the right one cached from the last draw call).
     if (!usePattern) {
         program = painter.useProgram(programId, programConfiguration);
         if (firstTile || program !== prevProgram) {
@@ -112,6 +121,8 @@ function setFillProgram(programId, usePattern, painter, programConfiguration, la
         }
         pattern.setTile(tile, painter, program);
     }
+    // This is what a typical uniform-setting call looks like (in this case, a
+    // 4-component vector that represents our transformation matrix).
     painter.gl.uniformMatrix4fv(program.uniforms.u_matrix, false, painter.translatePosMatrix(
         coord.posMatrix, tile,
         layer.paint['fill-translate'],
