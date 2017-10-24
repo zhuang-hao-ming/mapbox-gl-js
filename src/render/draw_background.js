@@ -11,7 +11,8 @@ module.exports = drawBackground;
 function drawBackground(painter: Painter, sourceCache: SourceCache, layer: BackgroundStyleLayer) {
     if (layer.isOpacityZero(painter.transform.zoom)) return;
 
-    const gl = painter.gl;
+    const context = painter.context;
+    const gl = context.gl;
     const transform = painter.transform;
     const tileSize = transform.tileSize;
     const color = layer.paint['background-color'];
@@ -30,11 +31,11 @@ function drawBackground(painter: Painter, sourceCache: SourceCache, layer: Backg
         if (pattern.isPatternMissing(image, painter)) return;
         program = painter.useProgram('fillPattern', painter.basicFillProgramConfiguration);
         pattern.prepare(image, painter, program);
-        painter.tileExtentPatternVAO.bind(gl, program, painter.tileExtentBuffer);
+        painter.tileExtentPatternVAO.bind(context, program, painter.tileExtentBuffer);
     } else {
         program = painter.useProgram('fill', painter.basicFillProgramConfiguration);
         gl.uniform4fv(program.uniforms.u_color, color);
-        painter.tileExtentVAO.bind(gl, program, painter.tileExtentBuffer);
+        painter.tileExtentVAO.bind(context, program, painter.tileExtentBuffer);
     }
 
     gl.uniform1f(program.uniforms.u_opacity, opacity);
