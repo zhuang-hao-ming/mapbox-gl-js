@@ -19,10 +19,10 @@ function drawRaster(painter: Painter, sourceCache: SourceCache, layer: RasterSty
     const source = sourceCache.getSource();
     const program = painter.useProgram('raster');
 
-    gl.disable(gl.DEPTH_TEST);
+    context.depthTest.set(false);
     context.depthMask.set(false);
 
-    gl.disable(gl.STENCIL_TEST);
+    context.stencilTest.set(false);
 
     // Constant parameters.
     gl.uniform1f(program.uniforms.u_brightness_low, layer.paint['raster-brightness-min']);
@@ -95,7 +95,7 @@ function drawRaster(painter: Painter, sourceCache: SourceCache, layer: RasterSty
         }
     }
 
-    gl.depthFunc(gl.LEQUAL);
+    context.depthFunc.set(context.gl.LEQUAL);   // TODO bad
 }
 
 function spinWeights(angle) {

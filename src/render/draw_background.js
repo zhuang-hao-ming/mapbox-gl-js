@@ -22,7 +22,7 @@ function drawBackground(painter: Painter, sourceCache: SourceCache, layer: Backg
     const pass = (!image && color[3] === 1 && opacity === 1) ? 'opaque' : 'translucent';
     if (painter.renderPass !== pass) return;
 
-    gl.disable(gl.STENCIL_TEST);
+    context.stencilTest.set(false);
 
     painter.setDepthSublayer(0);
 
