@@ -20,7 +20,7 @@ function drawRaster(painter: Painter, sourceCache: SourceCache, layer: RasterSty
     const program = painter.useProgram('raster');
 
     gl.disable(gl.DEPTH_TEST);
-    painter.depthMask(false);
+    context.depthMask.set(false);
 
     gl.disable(gl.STENCIL_TEST);
 
