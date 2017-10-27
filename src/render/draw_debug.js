@@ -1,6 +1,5 @@
 // @flow
 
-const browser = require('../util/browser');
 const mat4 = require('@mapbox/gl-matrix').mat4;
 const EXTENT = require('../data/extent');
 const VertexBuffer = require('../gl/vertex_buffer');
@@ -23,7 +22,6 @@ function drawDebugTile(painter, sourceCache, coord) {
     const gl = painter.gl;
 
     gl.disable(gl.STENCIL_TEST);
-    painter.lineWidth(1 * browser.devicePixelRatio);
 
     const posMatrix = coord.posMatrix;
     const program = painter.useProgram('debug');

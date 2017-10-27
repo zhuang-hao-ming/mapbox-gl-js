@@ -33,7 +33,6 @@ function drawFill(painter: Painter, sourceCache: SourceCache, layer: FillStyleLa
 
     // Draw stroke
     if (painter.renderPass === 'translucent' && layer.paint['fill-antialias']) {
-        painter.lineWidth(2);
         painter.depthMask(false);
 
         // If we defined a different color for the fill outline, we are

@@ -61,7 +61,6 @@ class Painter {
     _tileTextures: { [number]: Array<Texture> };
     numSublayers: number;
     depthEpsilon: number;
-    lineWidthRange: [number, number];
     basicFillProgramConfiguration: ProgramConfiguration;
     emptyProgramConfiguration: ProgramConfiguration;
     width: number;
@@ -107,8 +106,6 @@ class Painter {
         // This is implemented using the WebGL depth buffer.
         this.numSublayers = SourceCache.maxUnderzooming + SourceCache.maxOverzooming + 1;
         this.depthEpsilon = 1 / Math.pow(2, 16);
-
-        this.lineWidthRange = gl.getParameter(gl.ALIASED_LINE_WIDTH_RANGE);
 
         this.basicFillProgramConfiguration = ProgramConfiguration.createBasicFill();
         this.emptyProgramConfiguration = new ProgramConfiguration();
@@ -514,10 +511,6 @@ class Painter {
     getTileTexture(size: number) {
         const textures = this._tileTextures[size];
         return textures && textures.length > 0 ? textures.pop() : null;
-    }
-
-    lineWidth(width: number) {
-        this.gl.lineWidth(util.clamp(width, this.lineWidthRange[0], this.lineWidthRange[1]));
     }
 
     showOverdrawInspector(enabled: boolean) {
