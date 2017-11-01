@@ -133,6 +133,14 @@ class Marker {
             }
             this._popup = popup;
             this._popup.setLngLat(this._lngLat);
+
+            this._element.addEventListener('keypress', function (e) {
+                var code = e.charCode || e.keyCode;
+
+                if ((code == 32) || (code == 13)) { // space or enter
+                    this.togglePopup();
+                }
+            });
         }
 
         return this;
