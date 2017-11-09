@@ -1,9 +1,13 @@
 'use strict';
 
 const test = require('mapbox-gl-js-test').test;
-const createStructArrayType = require('../../../src/util/struct_array');
+const proxyquire = require('proxyquire');
 
-test('StructArray', (t) => {
+const structArrayTests = (isEvalSupported) => (t) => {
+
+    const createStructArrayType = proxyquire('../../../src/util/struct_array', {
+        './eval_support': isEvalSupported
+    });
 
     const TestArray = createStructArrayType({
         members: [
@@ -124,4 +128,8 @@ test('StructArray', (t) => {
     });
 
     t.end();
-});
+};
+
+test('StructArray - with eval support', structArrayTests(true));
+test('StructArray - without eval support', structArrayTests(false));
+
