@@ -2,6 +2,8 @@
 
 const {createExpression} = require('../expression');
 
+const isEvalSupported = require('../util/eval_support');
+
 import type {GlobalProperties} from '../expression';
 export type FeatureFilter = (globalProperties: GlobalProperties, feature: VectorTileFeature) => boolean;
 
@@ -68,8 +70,11 @@ function createFilter(filter: any): FeatureFilter {
         return () => true;
     }
 
-    if (!isExpressionFilter(filter)) {
+    const isExpression = isExpressionFilter(filter);
+    if (!isExpression && isEvalSupported) {
         return (new Function('g', 'f', `var p = (f && f.properties || {}); return ${compile(filter)}`): any);
+    } else if (!isExpression) {
+        filter = convertFilter(filter);
     }
 
     const compiled = createExpression(filter, filterSpec);
@@ -147,3 +152,72 @@ function compileNegation(expression) {
 function compare(a, b) {
     return a < b ? -1 : a > b ? 1 : 0;
 }
+
+function convertFilter(filter: ?Array<any>): mixed {
+    if (!filter) return true;
+    const op = filter[0];
+    if (filter.length <= 1) return (op !== 'any');
+    const converted =
+        op === '==' ? convertComparisonOp(filter[1], filter[2], '==') :
+        op === '!=' ? convertNegation(convertComparisonOp(filter[1], filter[2], '==')) :
+        op === '<' ||
+        op === '>' ||
+        op === '<=' ||
+        op === '>=' ? convertComparisonOp(filter[1], filter[2], op) :
+        op === 'any' ? convertDisjunctionOp(filter.slice(1)) :
+        op === 'all' ? ['all'].concat(filter.slice(1).map(convertFilter)) :
+        op === 'none' ? ['all'].concat(filter.slice(1).map(convertFilter).map(convertNegation)) :
+        op === 'in' ? convertInOp(filter[1], filter.slice(2)) :
+        op === '!in' ? convertNegation(convertInOp(filter[1], filter.slice(2))) :
+        op === 'has' ? convertHasOp(filter[1]) :
+        op === '!has' ? convertNegation(convertHasOp(filter[1])) :
+        true;
+    return converted;
+}
+
+function convertComparisonOp(property: string, value: any, op: string) {
+    switch (property) {
+    case '$type':
+        return [`filter-type-${op}`, value];
+    case '$id':
+        return [`filter-id-${op}`, value];
+    default:
+        return [`filter-${op}`, property, value];
+    }
+}
+
+function convertDisjunctionOp(filters: Array<Array<any>>) {
+    return ['any'].concat(filters.map(convertFilter));
+}
+
+function convertInOp(property: string, values: Array<any>) {
+    if (values.length === 0) { return false; }
+    switch (property) {
+    case '$type':
+        return [`filter-type-in`, ['literal', values]];
+    case '$id':
+        return [`filter-id-in`, ['literal', values]];
+    default:
+        if (values.length > 200 && !values.some(v => typeof v !== typeof values[0])) {
+            return ['filter-in-large', property, ['literal', values.sort(compare)]];
+        } else {
+            return ['filter-in-small', property, ['literal', values]];
+        }
+    }
+}
+
+function convertHasOp(property: string) {
+    switch (property) {
+    case '$type':
+        return true;
+    case '$id':
+        return [`filter-has-id`];
+    default:
+        return [`filter-has`, property];
+    }
+}
+
+function convertNegation(filter: mixed) {
+    return ['!', filter];
+}
+
