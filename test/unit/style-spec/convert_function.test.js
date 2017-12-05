@@ -1,7 +1,7 @@
 'use strict';
 
 const test = require('mapbox-gl-js-test').test;
-const convertFunction = require('../../../src/style-spec/function/convert');
+const {convertFunction} = require('../../../src/style-spec/expression/convert_function');
 
 test('convertFunction', (t) => {
     t.test('feature-constant text-field with token replacement', (t) => {
@@ -15,8 +15,9 @@ test('convertFunction', (t) => {
 
         const expression = convertFunction(functionValue, {
             type: 'string',
-            function: 'piecewise-constant'
-        }, 'text-field');
+            function: 'piecewise-constant',
+            tokens: true
+        });
         t.deepEqual(expression, [
             'step',
             ['zoom'],
@@ -55,7 +56,7 @@ test('convertFunction', (t) => {
         const expression = convertFunction(functionValue, {
             type: 'string',
             function: 'piecewise-constant'
-        }, 'text-field');
+        });
         t.deepEqual(expression, [
             'step',
             ['zoom'],
@@ -82,7 +83,7 @@ test('convertFunction', (t) => {
         const expression = convertFunction(functionValue, {
             type: 'number',
             function: 'interpolated'
-        }, 'text-size');
+        });
         t.deepEqual(expression, [
             'interpolate',
             ['exponential', 1],

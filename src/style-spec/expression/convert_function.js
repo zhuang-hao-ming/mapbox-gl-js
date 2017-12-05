@@ -1,9 +1,20 @@
+// @flow
+
+import type {StylePropertySpecification} from '../style-spec';
+
 const assert = require('assert');
 const extend = require('../util/extend');
 
-module.exports = convertFunction;
+module.exports = {
+    isFunction,
+    convertFunction
+};
 
-function convertFunction(parameters, propertySpec, name) {
+function isFunction(value: PropertyValueSpecification<any>) {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function convertFunction(parameters: PropertyValueSpecification<any>, propertySpec: StylePropertySpecification) {
     let expression;
 
     parameters = extend({}, parameters);
@@ -23,16 +34,12 @@ function convertFunction(parameters, propertySpec, name) {
         const zoomDependent = zoomAndFeatureDependent || !featureDependent;
 
         const stops = parameters.stops.map((stop) => {
-            if (!featureDependent && (name === 'icon-image' || name === 'text-field') && typeof stop[1] === 'string') {
+            if (!featureDependent && propertySpec.tokens && typeof stop[1] === 'string') {
                 return [stop[0], convertTokenString(stop[1])];
 
             }
             return [stop[0], convertValue(stop[1], propertySpec)];
         });
-
-        if (parameters.colorSpace && parameters.colorSpace !== 'rgb') {
-            throw new Error('Unimplemented');
-        }
 
         if (zoomAndFeatureDependent) {
             expression = convertZoomAndPropertyFunction(parameters, propertySpec, stops, defaultExpression);
@@ -51,15 +58,14 @@ function convertFunction(parameters, propertySpec, name) {
 
 function convertIdentityFunction(parameters, propertySpec, defaultExpression) {
     const get = ['get', parameters.property];
-    const type = propertySpec.type;
 
-    if (type === 'color') {
+    if (propertySpec.type === 'color') {
         return parameters.default === undefined ? get : ['to-color', get, parameters.default];
-    } else if (type === 'array' && typeof propertySpec.length === 'number') {
+    } else if (propertySpec.type === 'array' && typeof propertySpec.length === 'number') {
         return ['array', propertySpec.value, propertySpec.length, get];
-    } else if (type === 'array') {
+    } else if (propertySpec.type === 'array') {
         return ['array', propertySpec.value, get];
-    } else if (type === 'enum') {
+    } else if (propertySpec.type === 'enum') {
         return [
             'let',
             'property_value', ['string', get],
@@ -83,6 +89,14 @@ function convertValue(value, spec) {
         return ['literal', value];
     } else {
         return value;
+    }
+}
+
+function getInterpolateOperator(parameters) {
+    switch (parameters.colorSpace) {
+    case 'hcl': return 'interpolate-hcl';
+    case 'lab': return 'interpolate-lab';
+    default: return 'interpolate';
     }
 }
 
@@ -112,7 +126,7 @@ function convertZoomAndPropertyFunction(parameters, propertySpec, stops, default
     // otherwise.
     const functionType = getFunctionType({}, propertySpec);
     if (functionType === 'exponential') {
-        const expression = ['interpolate', ['linear'], ['zoom']];
+        const expression = [getInterpolateOperator(parameters), ['linear'], ['zoom']];
 
         for (const z of zoomStops) {
             const output = convertPropertyFunction(featureFunctionParameters[z], propertySpec, featureFunctionStops[z], defaultExpression);
@@ -167,7 +181,7 @@ function convertPropertyFunction(parameters, propertySpec, stops, defaultExpress
         isStep = true;
     } else if (type === 'exponential') {
         const base = parameters.base !== undefined ? parameters.base : 1;
-        expression = ['interpolate', ['exponential', base], input];
+        expression = [getInterpolateOperator(parameters), ['exponential', base], input];
     } else {
         throw new Error(`Unknown property function type ${type}`);
     }
@@ -194,7 +208,7 @@ function convertZoomFunction(parameters, propertySpec, stops, input = ['zoom']) 
         isStep = true;
     } else if (type === 'exponential') {
         const base = parameters.base !== undefined ? parameters.base : 1;
-        expression = ['interpolate', ['exponential', base], input];
+        expression = [getInterpolateOperator(parameters), ['exponential', base], input];
     } else {
         throw new Error(`Unknown zoom function type "${type}"`);
     }
@@ -212,7 +226,7 @@ function fixupDegenerateStepCurve(expression) {
     // degenerate step curve (i.e. a constant function): add a noop stop
     if (expression[0] === 'step' && expression.length === 3) {
         expression.push(0);
-        expression.push(expression[3]);
+        expression.push(expression[2]);
     }
 }
 

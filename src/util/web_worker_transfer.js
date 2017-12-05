@@ -5,7 +5,6 @@ const assert = require('assert');
 const Grid = require('grid-index');
 const Color = require('../style-spec/util/color');
 const {
-    StylePropertyFunction,
     StyleExpression,
     StyleExpressionWithErrorHandling,
     ZoomDependentExpression,
@@ -85,7 +84,6 @@ register(Grid);
 
 register(Color);
 
-register(StylePropertyFunction);
 register(StyleExpression, {omit: ['_evaluator']});
 register(StyleExpressionWithErrorHandling, {omit: ['_evaluator']});
 register(ZoomDependentExpression);

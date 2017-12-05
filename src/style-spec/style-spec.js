@@ -11,7 +11,8 @@ export type StylePropertySpecification = {
     'function': boolean,
     'property-function': boolean,
     'zoom-function': boolean,
-    default?: string
+    default?: string,
+    tokens?: boolean
 } | {
     type: 'boolean',
     'function': boolean,
@@ -60,9 +61,6 @@ exports.ValidationError = require('./error/validation_error');
 exports.ParsingError = require('./error/parsing_error');
 exports.expression = require('./expression');
 exports.featureFilter = require('./feature_filter');
-
-exports.function = require('./function');
-exports.function.convertFunction = require('./function/convert');
 
 exports.validate = require('./validate_style');
 exports.validate.parsed = require('./validate_style');
