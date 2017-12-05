@@ -65,7 +65,6 @@ class Painter {
     _tileFramebuffers: { [number]: Array<Framebuffer> };
     numSublayers: number;
     depthEpsilon: number;
-    lineWidthRange: [number, number];
     emptyProgramConfiguration: ProgramConfiguration;
     width: number;
     height: number;
@@ -109,8 +108,6 @@ class Painter {
         this.depthEpsilon = 1 / Math.pow(2, 16);
 
         this.depthRboNeedsClear = true;
-
-        this.lineWidthRange = gl.getParameter(gl.ALIASED_LINE_WIDTH_RANGE);
 
         this.emptyProgramConfiguration = new ProgramConfiguration();
 
@@ -493,10 +490,6 @@ class Painter {
     getTileFramebuffer(size: number) {
         const framebuffers = this._tileFramebuffers[size];
         return framebuffers && framebuffers.length > 0 ? framebuffers.pop() : null;
-    }
-
-    lineWidth(width: number) {
-        this.context.lineWidth.set(util.clamp(width, this.lineWidthRange[0], this.lineWidthRange[1]));
     }
 
     showOverdrawInspector(enabled: boolean) {
