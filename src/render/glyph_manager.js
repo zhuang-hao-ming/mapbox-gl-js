@@ -133,7 +133,7 @@ class GlyphManager {
 
         return {
             id,
-            bitmap: AlphaImage.create({width: 30, height: 30}, tinySDF.draw(String.fromCharCode(id))),
+            bitmap: new AlphaImage({width: 30, height: 30}, tinySDF.draw(String.fromCharCode(id))),
             metrics: {
                 width: 24,
                 height: 24,
