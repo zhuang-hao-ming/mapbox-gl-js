@@ -4,6 +4,7 @@ const glMatrix = require('@mapbox/gl-matrix');
 const pattern = require('./pattern');
 const Texture = require('./texture');
 const Color = require('../style-spec/util/color');
+const DepthMode = require('../gl/depth_mode');
 const mat3 = glMatrix.mat3;
 const mat4 = glMatrix.mat4;
 const vec3 = glMatrix.vec3;
@@ -23,14 +24,14 @@ function draw(painter: Painter, source: SourceCache, layer: FillExtrusionStyleLa
 
     if (painter.renderPass === 'offscreen') {
         const context = painter.context;
+        const gl = context.gl;
 
         setupFramebuffer(painter, layer);
 
         context.stencilTest.set(false);
-        context.depthTest.set(true);
-
         context.clear({ color: Color.transparent });
-        context.depthMask.set(true);
+
+        context.setDepthMode(new DepthMode(gl.LEQUAL, true, [0, 1]));
 
         for (let i = 0; i < coords.length; i++) {
             drawExtrusion(painter, source, layer, coords[i]);
@@ -77,7 +78,7 @@ function drawExtrusionTexture(painter, layer) {
     const program = painter.useProgram('extrusionTexture');
 
     context.stencilTest.set(false);
-    context.depthTest.set(false);
+    context.setDepthMode(DepthMode.disabled());
 
     context.activeTexture.set(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, renderedTexture.colorAttachment.get());
