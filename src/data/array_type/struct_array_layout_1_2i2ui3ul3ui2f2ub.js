@@ -14,7 +14,7 @@ const {StructArray} = require('../../util/struct_array');
  *
  * @private
  */
-class StructArrayLayout12i2ui3ul3ui2f2ub extends StructArray {
+class StructArrayLayout_1_2i2ui3ul3ui2f2ub extends StructArray {
     uint8: Uint8Array;
     int16: Int16Array;
     uint16: Uint16Array;
@@ -54,6 +54,6 @@ class StructArrayLayout12i2ui3ul3ui2f2ub extends StructArray {
 
 }
 
-StructArrayLayout12i2ui3ul3ui2f2ub.prototype.bytesPerElement = 40;
+StructArrayLayout_1_2i2ui3ul3ui2f2ub.prototype.bytesPerElement = 40;
 
-module.exports = StructArrayLayout12i2ui3ul3ui2f2ub;
+module.exports = StructArrayLayout_1_2i2ui3ul3ui2f2ub;

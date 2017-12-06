@@ -9,7 +9,7 @@ const {StructArray} = require('../../util/struct_array');
  *
  * @private
  */
-class StructArrayLayout13f extends StructArray {
+class StructArrayLayout_1_3f extends StructArray {
     uint8: Uint8Array;
     float32: Float32Array;
 
@@ -30,6 +30,6 @@ class StructArrayLayout13f extends StructArray {
 
 }
 
-StructArrayLayout13f.prototype.bytesPerElement = 12;
+StructArrayLayout_1_3f.prototype.bytesPerElement = 12;
 
-module.exports = StructArrayLayout13f;
+module.exports = StructArrayLayout_1_3f;

@@ -123,15 +123,6 @@ class StructArray {
     }
 
     /**
-     * Return the Struct at the given location in the array.
-     * @param {number} index The index of the element.
-     */
-    get(index: number) {
-        assert(!this.isTransferred);
-        return new this.StructType(this, index);
-    }
-
-    /**
      * Resize the array to discard unused capacity.
      */
     _trim() {
@@ -186,24 +177,6 @@ class StructArray {
         //     // $FlowFixMe
         //     this[getArrayViewName(type)] = new viewTypes[type](this.arrayBuffer);
         // }
-    }
-
-    /**
-     * Output the `StructArray` between indices `startIndex` and `endIndex` as an array of `StructTypes` to enable sorting
-     * @param {number} startIndex
-     * @param {number} endIndex
-     */
-    toArray(startIndex: number, endIndex: number) {
-        assert(!this.isTransferred);
-
-        const array = [];
-
-        for (let i = startIndex; i < endIndex; i++) {
-            const struct = this.get(i);
-            array.push(struct);
-        }
-
-        return array;
     }
 }
 

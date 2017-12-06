@@ -49,7 +49,7 @@ const layoutCache = {};
 const arrayCache = {};
 const filesWritten = [];
 
-function createStructArrayType(moduleName: string, options: StructArrayTypeParameters) {
+function createStructArrayType(moduleName: string, options: StructArrayTypeParameters, includeStructAccessors: boolean = false) {
     const alignment = options.alignment === undefined ? 1 : options.alignment;
 
     let offset = 0;
@@ -98,7 +98,8 @@ function createStructArrayType(moduleName: string, options: StructArrayTypeParam
             size,
             usedTypes,
             hasAnchorPoint,
-            layoutModule
+            layoutModule,
+            includeStructAccessors
         });
         arrayCache[key] = moduleName;
     } else if (arrayCache[key] !== moduleName) {
@@ -126,7 +127,7 @@ function createStructArrayLayoutType(alignment, members, size, usedTypes) {
         return memo.concat(member);
     }, []);
 
-    const key = `${alignment}_${members.map(m => `${m.components}${typeAbbreviations[m.type]}`).join('_')}`;
+    const key = `${alignment}_${members.map(m => `${m.components}${typeAbbreviations[m.type]}`).join('')}`;
     const moduleName = `struct_array_layout_${key}`;
     if (!layoutCache[key]) {
         const code = structArrayLayoutJs({
@@ -154,7 +155,7 @@ function sizeOf(type: ViewType): number {
 
 function camelize (str) {
     return str.replace(/(?:^|[-_])(.)/g, (_, x) => {
-        return x.toUpperCase();
+        return /^[0-9]$/.test(x) ? _ : x.toUpperCase();
     });
 }
 
@@ -203,7 +204,7 @@ createStructArrayType(`symbol_opacity_vertex`, {
 });
 createStructArrayType('collision_box', {
     members: symbolAttributes.collisionBox
-});
+}, true);
 createStructArrayType(`collision_box_layout_vertex`, {
     members: symbolAttributes.collisionBoxLayout,
     alignment: 4
@@ -218,13 +219,13 @@ createStructArrayType(`collision_vertex`, {
 });
 createStructArrayType('placed_symbol', {
     members: symbolAttributes.placement
-});
+}, true);
 createStructArrayType('glyph_offset', {
     members: symbolAttributes.glyphOffset
-});
+}, true);
 createStructArrayType('symbol_line_vertex', {
     members: symbolAttributes.lineVertex
-});
+}, true);
 
 // feature index array
 createStructArrayType('feature_index', {
