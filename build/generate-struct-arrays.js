@@ -237,7 +237,7 @@ createStructArrayType('feature_index', {
         // the bucket the feature appears in
         { type: 'Uint16', name: 'bucketIndex' }
     ]
-});
+}, true);
 
 // triangle index array
 createStructArrayType('triangle_index', {
